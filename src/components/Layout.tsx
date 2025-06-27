@@ -55,7 +55,7 @@ const Layout = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 flex">
       {/* Mobile sidebar backdrop */}
       {sidebarOpen && (
         <div 
@@ -66,11 +66,11 @@ const Layout = () => {
 
       {/* Sidebar */}
       <div className={`
-        fixed inset-y-0 left-0 z-30 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out
+        fixed inset-y-0 left-0 z-30 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out flex flex-col
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
-        lg:translate-x-0 lg:static lg:inset-0
+        lg:translate-x-0 lg:relative lg:flex
       `}>
-        <div className="flex items-center justify-between h-16 px-4 border-b">
+        <div className="flex items-center justify-between h-16 px-4 border-b flex-shrink-0">
           <h1 className="text-xl font-bold text-gray-900">CRM Sistemi</h1>
           <button
             onClick={() => setSidebarOpen(false)}
@@ -80,7 +80,7 @@ const Layout = () => {
           </button>
         </div>
         
-        <nav className="mt-8 px-4 flex-1">
+        <nav className="flex-1 px-4 py-6 overflow-y-auto">
           <ul className="space-y-2">
             {navigation.map((item) => {
               const isActive = location.pathname === item.href;
@@ -107,7 +107,7 @@ const Layout = () => {
         </nav>
 
         {/* User Profile Dropdown */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 border-t bg-gray-50">
+        <div className="p-4 border-t bg-gray-50 flex-shrink-0">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button 
@@ -163,10 +163,10 @@ const Layout = () => {
         </div>
       </div>
 
-      {/* Main content */}
-      <div className="lg:pl-64">
+      {/* Main content area */}
+      <div className="flex-1 flex flex-col min-w-0">
         {/* Top bar */}
-        <div className="sticky top-0 z-10 bg-white shadow-sm border-b h-16 flex items-center px-4 lg:px-6">
+        <header className="bg-white shadow-sm border-b h-16 flex items-center px-4 lg:px-6 flex-shrink-0">
           <button
             onClick={() => setSidebarOpen(true)}
             className="lg:hidden mr-4 p-2 rounded-md hover:bg-gray-100 transition-colors"
@@ -179,10 +179,10 @@ const Layout = () => {
               {navigation.find(item => item.href === location.pathname)?.name || 'Dashboard'}
             </h2>
           </div>
-        </div>
+        </header>
 
         {/* Page content */}
-        <main className="min-h-[calc(100vh-4rem)]">
+        <main className="flex-1 overflow-auto">
           <Outlet />
         </main>
       </div>
