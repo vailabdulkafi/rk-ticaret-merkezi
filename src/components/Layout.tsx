@@ -12,8 +12,17 @@ import {
   Calendar,
   LogOut,
   Menu,
-  X
+  X,
+  User
 } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 const Layout = () => {
   const { user, signOut, loading } = useAuth();
@@ -65,13 +74,13 @@ const Layout = () => {
           <h1 className="text-xl font-bold text-gray-900">CRM Sistemi</h1>
           <button
             onClick={() => setSidebarOpen(false)}
-            className="lg:hidden"
+            className="lg:hidden p-2 rounded-md hover:bg-gray-100 transition-colors"
           >
-            <X className="h-6 w-6" />
+            <X className="h-5 w-5" />
           </button>
         </div>
         
-        <nav className="mt-8 px-4">
+        <nav className="mt-8 px-4 flex-1">
           <ul className="space-y-2">
             {navigation.map((item) => {
               const isActive = location.pathname === item.href;
@@ -80,15 +89,15 @@ const Layout = () => {
                   <Link
                     to={item.href}
                     className={`
-                      flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors
+                      flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer
                       ${isActive 
-                        ? 'bg-blue-100 text-blue-900' 
-                        : 'text-gray-700 hover:bg-gray-100'
+                        ? 'bg-blue-600 text-white font-bold shadow-md' 
+                        : 'text-gray-700 hover:bg-blue-50 hover:text-blue-700'
                       }
                     `}
                     onClick={() => setSidebarOpen(false)}
                   >
-                    <item.icon className="mr-3 h-5 w-5" />
+                    <item.icon className={`mr-3 h-5 w-5 ${isActive ? 'text-white' : ''}`} />
                     {item.name}
                   </Link>
                 </li>
@@ -97,31 +106,60 @@ const Layout = () => {
           </ul>
         </nav>
 
-        <div className="absolute bottom-0 left-0 right-0 p-4 border-t">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-              <span className="text-white text-sm font-medium">
-                {user.user_metadata?.first_name?.[0] || user.email?.[0]?.toUpperCase()}
-              </span>
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900 truncate">
-                {user.user_metadata?.first_name} {user.user_metadata?.last_name}
-              </p>
-              <p className="text-xs text-gray-500 truncate">
-                {user.email}
-              </p>
-            </div>
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            className="w-full"
-            onClick={handleSignOut}
-          >
-            <LogOut className="h-4 w-4 mr-2" />
-            Çıkış Yap
-          </Button>
+        {/* User Profile Dropdown */}
+        <div className="absolute bottom-0 left-0 right-0 p-4 border-t bg-gray-50">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button 
+                variant="ghost" 
+                className="w-full justify-start p-3 h-auto hover:bg-white hover:shadow-sm transition-all duration-200"
+              >
+                <div className="flex items-center gap-3 w-full">
+                  <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
+                    <span className="text-white text-sm font-medium">
+                      {user.user_metadata?.first_name?.[0] || user.email?.[0]?.toUpperCase()}
+                    </span>
+                  </div>
+                  <div className="flex-1 min-w-0 text-left">
+                    <p className="text-sm font-medium text-gray-900 truncate">
+                      {user.user_metadata?.first_name} {user.user_metadata?.last_name}
+                    </p>
+                    <p className="text-xs text-gray-500 truncate">
+                      {user.email}
+                    </p>
+                  </div>
+                </div>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent 
+              align="end" 
+              className="w-56 mb-2 bg-white shadow-lg border border-gray-200"
+            >
+              <DropdownMenuLabel className="font-normal">
+                <div className="flex flex-col space-y-1">
+                  <p className="text-sm font-medium leading-none">
+                    {user.user_metadata?.first_name} {user.user_metadata?.last_name}
+                  </p>
+                  <p className="text-xs leading-none text-muted-foreground">
+                    {user.email}
+                  </p>
+                </div>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem className="cursor-pointer">
+                <User className="mr-2 h-4 w-4" />
+                <span>Profil</span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem 
+                className="cursor-pointer text-red-600 focus:text-red-600"
+                onClick={handleSignOut}
+              >
+                <LogOut className="mr-2 h-4 w-4" />
+                <span>Çıkış Yap</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
@@ -131,9 +169,9 @@ const Layout = () => {
         <div className="sticky top-0 z-10 bg-white shadow-sm border-b h-16 flex items-center px-4 lg:px-6">
           <button
             onClick={() => setSidebarOpen(true)}
-            className="lg:hidden mr-4"
+            className="lg:hidden mr-4 p-2 rounded-md hover:bg-gray-100 transition-colors"
           >
-            <Menu className="h-6 w-6" />
+            <Menu className="h-5 w-5" />
           </button>
           
           <div className="flex-1">
