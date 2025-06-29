@@ -7,13 +7,15 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Search, ShoppingCart, Edit, Trash2, Euro, Calendar, Building2, Truck } from 'lucide-react';
+import { Plus, Search, ShoppingCart, Edit, Trash2, Building2, Calendar } from 'lucide-react';
 import { toast } from 'sonner';
+import OrderFormModal from '@/components/orders/OrderFormModal';
 
 const Orders = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
+  const [showFormModal, setShowFormModal] = useState(false);
 
   const { data: orders, isLoading } = useQuery({
     queryKey: ['orders'],
@@ -53,45 +55,50 @@ const Orders = () => {
   });
 
   const filteredOrders = orders?.filter(order =>
-    order.order_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
     order.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    order.order_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
     order.companies?.name.toLowerCase().includes(searchTerm.toLowerCase())
   ) || [];
 
   const getStatusColor = (status: string) => {
-    const colors = {
-      pending: 'bg-yellow-100 text-yellow-800',
-      confirmed: 'bg-blue-100 text-blue-800',
-      production: 'bg-purple-100 text-purple-800',
-      shipped: 'bg-indigo-100 text-indigo-800',
-      delivered: 'bg-green-100 text-green-800',
-      cancelled: 'bg-red-100 text-red-800',
-    };
-    return colors[status as keyof typeof colors] || colors.pending;
+    switch (status) {
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'confirmed':
+        return 'bg-blue-100 text-blue-800';
+      case 'shipped':
+        return 'bg-purple-100 text-purple-800';
+      case 'delivered':
+        return 'bg-green-100 text-green-800';
+      case 'cancelled':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
   };
 
   const getStatusText = (status: string) => {
-    const statusMap = {
-      pending: 'Bekliyor',
-      confirmed: 'Onaylandı',
-      production: 'Üretimde',
-      shipped: 'Kargoda',
-      delivered: 'Teslim Edildi',
-      cancelled: 'İptal Edildi',
-    };
-    return statusMap[status as keyof typeof statusMap] || status;
+    switch (status) {
+      case 'pending':
+        return 'Beklemede';
+      case 'confirmed':
+        return 'Onaylandı';
+      case 'shipped':
+        return 'Kargoda';
+      case 'delivered':
+        return 'Teslim Edildi';
+      case 'cancelled':
+        return 'İptal Edildi';
+      default:
+        return status;
+    }
   };
 
   const formatPrice = (price: number, currency: string) => {
     return new Intl.NumberFormat('tr-TR', {
       style: 'currency',
       currency: currency,
-      minimumFractionDigits: 2,
     }).format(price);
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('tr-TR');
   };
 
   if (isLoading) {
@@ -114,9 +121,12 @@ const Orders = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Siparişler</h1>
-          <p className="text-gray-600">Siparişlerinizi takip edin</p>
+          <p className="text-gray-600">Müşteri siparişlerinizi yönetin</p>
         </div>
-        <Button className="flex items-center gap-2">
+        <Button 
+          className="flex items-center gap-2"
+          onClick={() => setShowFormModal(true)}
+        >
           <Plus className="h-4 w-4" />
           Yeni Sipariş
         </Button>
@@ -143,11 +153,11 @@ const Orders = () => {
             <CardHeader className="pb-3">
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-red-50 rounded-lg">
-                    <ShoppingCart className="h-5 w-5 text-red-600" />
+                  <div className="p-2 bg-orange-50 rounded-lg">
+                    <ShoppingCart className="h-5 w-5 text-orange-600" />
                   </div>
                   <div>
-                    <CardTitle className="text-lg">{order.order_number}</CardTitle>
+                    <CardTitle className="text-lg">{order.title}</CardTitle>
                     <Badge className={`mt-1 ${getStatusColor(order.status)}`}>
                       {getStatusText(order.status)}
                     </Badge>
@@ -169,7 +179,9 @@ const Orders = () => {
               </div>
             </CardHeader>
             <CardContent className="space-y-3">
-              <h3 className="font-medium text-gray-900">{order.title}</h3>
+              <div className="text-sm font-medium text-gray-900">
+                {order.order_number}
+              </div>
               
               {order.companies && (
                 <div className="flex items-center gap-2 text-sm text-gray-600">
@@ -178,25 +190,19 @@ const Orders = () => {
                 </div>
               )}
 
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Euro className="h-4 w-4 text-gray-400" />
-                  <span className="font-semibold text-lg">
-                    {formatPrice(order.total_amount, order.currency)}
-                  </span>
+              <div className="flex justify-between items-center">
+                <div className="text-lg font-semibold text-gray-900">
+                  {formatPrice(order.total_amount, order.currency)}
                 </div>
               </div>
 
               {order.delivery_date && (
                 <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <Truck className="h-4 w-4 text-gray-400 flex-shrink-0" />
-                  Teslimat: {formatDate(order.delivery_date)}
+                  <Calendar className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                  <span className="font-medium">Teslimat: </span>
+                  {new Date(order.delivery_date).toLocaleDateString('tr-TR')}
                 </div>
               )}
-
-              <div className="text-xs text-gray-500">
-                Sipariş Tarihi: {formatDate(order.created_at)}
-              </div>
 
               {order.notes && (
                 <div className="text-sm text-gray-500 line-clamp-2">
@@ -213,14 +219,19 @@ const Orders = () => {
           <ShoppingCart className="h-12 w-12 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-900 mb-2">Sipariş bulunamadı</h3>
           <p className="text-gray-600 mb-4">
-            {searchTerm ? 'Arama kriterlerinize uygun sipariş bulunamadı.' : 'Henüz sipariş eklenmemiş.'}
+            {searchTerm ? 'Arama kriterlerinize uygun sipariş bulunamadı.' : 'Henüz sipariş oluşturulmamış. Sağ üstten "Yeni Sipariş" butonuna tıklayarak yeni sipariş oluşturabilirsiniz.'}
           </p>
-          <Button>
+          <Button onClick={() => setShowFormModal(true)}>
             <Plus className="h-4 w-4 mr-2" />
             İlk siparişi oluştur
           </Button>
         </div>
       )}
+
+      <OrderFormModal 
+        open={showFormModal}
+        onOpenChange={setShowFormModal}
+      />
     </div>
   );
 };

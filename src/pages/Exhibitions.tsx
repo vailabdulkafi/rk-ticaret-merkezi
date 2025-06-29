@@ -7,13 +7,15 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Search, Calendar, Edit, Trash2, MapPin, Users } from 'lucide-react';
+import { Plus, Search, Calendar, Edit, Trash2, MapPin } from 'lucide-react';
 import { toast } from 'sonner';
+import ExhibitionFormModal from '@/components/exhibitions/ExhibitionFormModal';
 
 const Exhibitions = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
+  const [showFormModal, setShowFormModal] = useState(false);
 
   const { data: exhibitions, isLoading } = useQuery({
     queryKey: ['exhibitions'],
@@ -40,10 +42,10 @@ const Exhibitions = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['exhibitions'] });
-      toast.success('Etkinlik başarıyla silindi');
+      toast.success('Fuar başarıyla silindi');
     },
     onError: (error) => {
-      toast.error('Etkinlik silinirken hata oluştu: ' + error.message);
+      toast.error('Fuar silinirken hata oluştu: ' + error.message);
     },
   });
 
@@ -53,45 +55,48 @@ const Exhibitions = () => {
   ) || [];
 
   const getStatusColor = (status: string) => {
-    const colors = {
-      planned: 'bg-blue-100 text-blue-800',
-      ongoing: 'bg-green-100 text-green-800',
-      completed: 'bg-gray-100 text-gray-800',
-      cancelled: 'bg-red-100 text-red-800',
-    };
-    return colors[status as keyof typeof colors] || colors.planned;
+    switch (status) {
+      case 'planned':
+        return 'bg-blue-100 text-blue-800';
+      case 'active':
+        return 'bg-green-100 text-green-800';
+      case 'completed':
+        return 'bg-gray-100 text-gray-800';
+      case 'cancelled':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
   };
 
   const getStatusText = (status: string) => {
-    const statusMap = {
-      planned: 'Planlandı',
-      ongoing: 'Devam Ediyor',
-      completed: 'Tamamlandı',
-      cancelled: 'İptal Edildi',
-    };
-    return statusMap[status as keyof typeof statusMap] || status;
-  };
-
-  const getTypeColor = (type: string) => {
-    const colors = {
-      exhibition: 'bg-purple-100 text-purple-800',
-      visit: 'bg-cyan-100 text-cyan-800',
-      meeting: 'bg-orange-100 text-orange-800',
-    };
-    return colors[type as keyof typeof colors] || colors.exhibition;
+    switch (status) {
+      case 'planned':
+        return 'Planlanan';
+      case 'active':
+        return 'Aktif';
+      case 'completed':
+        return 'Tamamlandı';
+      case 'cancelled':
+        return 'İptal Edildi';
+      default:
+        return status;
+    }
   };
 
   const getTypeText = (type: string) => {
-    const typeMap = {
-      exhibition: 'Fuar',
-      visit: 'Ziyaret',
-      meeting: 'Toplantı',
-    };
-    return typeMap[type as keyof typeof typeMap] || type;
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('tr-TR');
+    switch (type) {
+      case 'trade_show':
+        return 'Ticaret Fuarı';
+      case 'exhibition':
+        return 'Sergi';
+      case 'conference':
+        return 'Konferans';
+      case 'seminar':
+        return 'Seminer';
+      default:
+        return type;
+    }
   };
 
   if (isLoading) {
@@ -113,12 +118,15 @@ const Exhibitions = () => {
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Fuarlar ve Ziyaretler</h1>
-          <p className="text-gray-600">Etkinliklerinizi ve ziyaretlerinizi planlayın</p>
+          <h1 className="text-2xl font-bold text-gray-900">Fuarlar</h1>
+          <p className="text-gray-600">Katıldığınız fuarları yönetin</p>
         </div>
-        <Button className="flex items-center gap-2">
+        <Button 
+          className="flex items-center gap-2"
+          onClick={() => setShowFormModal(true)}
+        >
           <Plus className="h-4 w-4" />
-          Yeni Etkinlik
+          Yeni Fuar
         </Button>
       </div>
 
@@ -126,14 +134,14 @@ const Exhibitions = () => {
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
           <Input
-            placeholder="Etkinlik ara..."
+            placeholder="Fuar ara..."
             className="pl-10"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
         <div className="text-sm text-gray-600">
-          {filteredExhibitions.length} etkinlik bulundu
+          {filteredExhibitions.length} fuar bulundu
         </div>
       </div>
 
@@ -143,19 +151,14 @@ const Exhibitions = () => {
             <CardHeader className="pb-3">
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-cyan-50 rounded-lg">
-                    <Calendar className="h-5 w-5 text-cyan-600" />
+                  <div className="p-2 bg-indigo-50 rounded-lg">
+                    <Calendar className="h-5 w-5 text-indigo-600" />
                   </div>
                   <div>
                     <CardTitle className="text-lg">{exhibition.name}</CardTitle>
-                    <div className="flex gap-2 mt-1">
-                      <Badge className={getTypeColor(exhibition.type)}>
-                        {getTypeText(exhibition.type)}
-                      </Badge>
-                      <Badge className={getStatusColor(exhibition.status)}>
-                        {getStatusText(exhibition.status)}
-                      </Badge>
-                    </div>
+                    <Badge className={`mt-1 ${getStatusColor(exhibition.status)}`}>
+                      {getStatusText(exhibition.status)}
+                    </Badge>
                   </div>
                 </div>
                 <div className="flex gap-1">
@@ -174,6 +177,10 @@ const Exhibitions = () => {
               </div>
             </CardHeader>
             <CardContent className="space-y-3">
+              <div className="text-sm text-gray-600">
+                {getTypeText(exhibition.type)}
+              </div>
+              
               {exhibition.location && (
                 <div className="flex items-center gap-2 text-sm text-gray-600">
                   <MapPin className="h-4 w-4 text-gray-400 flex-shrink-0" />
@@ -184,20 +191,16 @@ const Exhibitions = () => {
               {(exhibition.start_date || exhibition.end_date) && (
                 <div className="flex items-center gap-2 text-sm text-gray-600">
                   <Calendar className="h-4 w-4 text-gray-400 flex-shrink-0" />
-                  <span>
-                    {exhibition.start_date && formatDate(exhibition.start_date)}
+                  <div>
+                    {exhibition.start_date && new Date(exhibition.start_date).toLocaleDateString('tr-TR')}
                     {exhibition.start_date && exhibition.end_date && ' - '}
-                    {exhibition.end_date && exhibition.end_date !== exhibition.start_date && formatDate(exhibition.end_date)}
-                  </span>
+                    {exhibition.end_date && new Date(exhibition.end_date).toLocaleDateString('tr-TR')}
+                  </div>
                 </div>
               )}
 
-              <div className="text-xs text-gray-500">
-                Oluşturulma: {formatDate(exhibition.created_at)}
-              </div>
-
               {exhibition.notes && (
-                <div className="text-sm text-gray-500 line-clamp-3">
+                <div className="text-sm text-gray-500 line-clamp-2">
                   {exhibition.notes}
                 </div>
               )}
@@ -209,16 +212,21 @@ const Exhibitions = () => {
       {filteredExhibitions.length === 0 && (
         <div className="text-center py-12">
           <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Etkinlik bulunamadı</h3>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Fuar bulunamadı</h3>
           <p className="text-gray-600 mb-4">
-            {searchTerm ? 'Arama kriterlerinize uygun etkinlik bulunamadı.' : 'Henüz etkinlik eklenmemiş.'}
+            {searchTerm ? 'Arama kriterlerinize uygun fuar bulunamadı.' : 'Henüz fuar eklenmemiş. Sağ üstten "Yeni Fuar" butonuna tıklayarak yeni fuar oluşturabilirsiniz.'}
           </p>
-          <Button>
+          <Button onClick={() => setShowFormModal(true)}>
             <Plus className="h-4 w-4 mr-2" />
-            İlk etkinliği ekle
+            İlk fuarı ekle
           </Button>
         </div>
       )}
+
+      <ExhibitionFormModal 
+        open={showFormModal}
+        onOpenChange={setShowFormModal}
+      />
     </div>
   );
 };

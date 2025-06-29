@@ -9,11 +9,13 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Search, Building2, Mail, Phone, MapPin, Edit, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
+import CompanyFormModal from '@/components/companies/CompanyFormModal';
 
 const Companies = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
+  const [showFormModal, setShowFormModal] = useState(false);
 
   const { data: companies, isLoading } = useQuery({
     queryKey: ['companies'],
@@ -83,7 +85,10 @@ const Companies = () => {
           <h1 className="text-2xl font-bold text-gray-900">Firmalar</h1>
           <p className="text-gray-600">Müşteri ve partner firmalarınızı yönetin</p>
         </div>
-        <Button className="flex items-center gap-2">
+        <Button 
+          className="flex items-center gap-2"
+          onClick={() => setShowFormModal(true)}
+        >
           <Plus className="h-4 w-4" />
           Yeni Firma
         </Button>
@@ -175,14 +180,19 @@ const Companies = () => {
           <Building2 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-900 mb-2">Firma bulunamadı</h3>
           <p className="text-gray-600 mb-4">
-            {searchTerm ? 'Arama kriterlerinize uygun firma bulunamadı.' : 'Henüz firma eklenmemiş.'}
+            {searchTerm ? 'Arama kriterlerinize uygun firma bulunamadı.' : 'Henüz firma eklenmemiş. Sağ üstten "Yeni Firma" butonuna tıklayarak yeni firma oluşturabilirsiniz.'}
           </p>
-          <Button>
+          <Button onClick={() => setShowFormModal(true)}>
             <Plus className="h-4 w-4 mr-2" />
             İlk firmayı ekle
           </Button>
         </div>
       )}
+
+      <CompanyFormModal 
+        open={showFormModal}
+        onOpenChange={setShowFormModal}
+      />
     </div>
   );
 };

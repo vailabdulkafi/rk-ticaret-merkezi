@@ -7,13 +7,15 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Search, FileText, Edit, Trash2, Euro, Calendar, Building2 } from 'lucide-react';
+import { Plus, Search, FileText, Edit, Trash2, Building2 } from 'lucide-react';
 import { toast } from 'sonner';
+import QuotationFormModal from '@/components/quotations/QuotationFormModal';
 
 const Quotations = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
+  const [showFormModal, setShowFormModal] = useState(false);
 
   const { data: quotations, isLoading } = useQuery({
     queryKey: ['quotations'],
@@ -53,43 +55,46 @@ const Quotations = () => {
   });
 
   const filteredQuotations = quotations?.filter(quotation =>
-    quotation.quotation_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
     quotation.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    quotation.quotation_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
     quotation.companies?.name.toLowerCase().includes(searchTerm.toLowerCase())
   ) || [];
 
   const getStatusColor = (status: string) => {
-    const colors = {
-      draft: 'bg-gray-100 text-gray-800',
-      sent: 'bg-blue-100 text-blue-800',
-      accepted: 'bg-green-100 text-green-800',
-      rejected: 'bg-red-100 text-red-800',
-      expired: 'bg-orange-100 text-orange-800',
-    };
-    return colors[status as keyof typeof colors] || colors.draft;
+    switch (status) {
+      case 'draft':
+        return 'bg-gray-100 text-gray-800';
+      case 'sent':
+        return 'bg-blue-100 text-blue-800';
+      case 'accepted':
+        return 'bg-green-100 text-green-800';
+      case 'rejected':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
   };
 
   const getStatusText = (status: string) => {
-    const statusMap = {
-      draft: 'Taslak',
-      sent: 'Gönderildi',
-      accepted: 'Kabul Edildi',
-      rejected: 'Reddedildi',
-      expired: 'Süresi Doldu',
-    };
-    return statusMap[status as keyof typeof statusMap] || status;
+    switch (status) {
+      case 'draft':
+        return 'Taslak';
+      case 'sent':
+        return 'Gönderildi';
+      case 'accepted':
+        return 'Kabul Edildi';
+      case 'rejected':
+        return 'Reddedildi';
+      default:
+        return status;
+    }
   };
 
   const formatPrice = (price: number, currency: string) => {
     return new Intl.NumberFormat('tr-TR', {
       style: 'currency',
       currency: currency,
-      minimumFractionDigits: 2,
     }).format(price);
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('tr-TR');
   };
 
   if (isLoading) {
@@ -114,7 +119,10 @@ const Quotations = () => {
           <h1 className="text-2xl font-bold text-gray-900">Teklifler</h1>
           <p className="text-gray-600">Müşteri tekliflerinizi yönetin</p>
         </div>
-        <Button className="flex items-center gap-2">
+        <Button 
+          className="flex items-center gap-2"
+          onClick={() => setShowFormModal(true)}
+        >
           <Plus className="h-4 w-4" />
           Yeni Teklif
         </Button>
@@ -141,11 +149,11 @@ const Quotations = () => {
             <CardHeader className="pb-3">
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-orange-50 rounded-lg">
-                    <FileText className="h-5 w-5 text-orange-600" />
+                  <div className="p-2 bg-purple-50 rounded-lg">
+                    <FileText className="h-5 w-5 text-purple-600" />
                   </div>
                   <div>
-                    <CardTitle className="text-lg">{quotation.quotation_number}</CardTitle>
+                    <CardTitle className="text-lg">{quotation.title}</CardTitle>
                     <Badge className={`mt-1 ${getStatusColor(quotation.status)}`}>
                       {getStatusText(quotation.status)}
                     </Badge>
@@ -167,7 +175,9 @@ const Quotations = () => {
               </div>
             </CardHeader>
             <CardContent className="space-y-3">
-              <h3 className="font-medium text-gray-900">{quotation.title}</h3>
+              <div className="text-sm font-medium text-gray-900">
+                {quotation.quotation_number}
+              </div>
               
               {quotation.companies && (
                 <div className="flex items-center gap-2 text-sm text-gray-600">
@@ -176,25 +186,18 @@ const Quotations = () => {
                 </div>
               )}
 
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Euro className="h-4 w-4 text-gray-400" />
-                  <span className="font-semibold text-lg">
-                    {formatPrice(quotation.total_amount, quotation.currency)}
-                  </span>
+              <div className="flex justify-between items-center">
+                <div className="text-lg font-semibold text-gray-900">
+                  {formatPrice(quotation.total_amount, quotation.currency)}
                 </div>
               </div>
 
               {quotation.valid_until && (
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <Calendar className="h-4 w-4 text-gray-400 flex-shrink-0" />
-                  Geçerli: {formatDate(quotation.valid_until)}
+                <div className="text-sm text-gray-500">
+                  <span className="font-medium">Geçerlilik: </span>
+                  {new Date(quotation.valid_until).toLocaleDateString('tr-TR')}
                 </div>
               )}
-
-              <div className="text-xs text-gray-500">
-                Oluşturulma: {formatDate(quotation.created_at)}
-              </div>
 
               {quotation.notes && (
                 <div className="text-sm text-gray-500 line-clamp-2">
@@ -211,14 +214,19 @@ const Quotations = () => {
           <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-900 mb-2">Teklif bulunamadı</h3>
           <p className="text-gray-600 mb-4">
-            {searchTerm ? 'Arama kriterlerinize uygun teklif bulunamadı.' : 'Henüz teklif eklenmemiş.'}
+            {searchTerm ? 'Arama kriterlerinize uygun teklif bulunamadı.' : 'Henüz teklif oluşturulmamış. Sağ üstten "Yeni Teklif" butonuna tıklayarak yeni teklif oluşturabilirsiniz.'}
           </p>
-          <Button>
+          <Button onClick={() => setShowFormModal(true)}>
             <Plus className="h-4 w-4 mr-2" />
             İlk teklifi oluştur
           </Button>
         </div>
       )}
+
+      <QuotationFormModal 
+        open={showFormModal}
+        onOpenChange={setShowFormModal}
+      />
     </div>
   );
 };
