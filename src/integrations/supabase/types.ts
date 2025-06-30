@@ -9,6 +9,51 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      bank_info: {
+        Row: {
+          account_holder: string | null
+          account_number: string
+          bank_name: string
+          branch_name: string | null
+          created_at: string
+          created_by: string | null
+          currency: string | null
+          iban: string | null
+          id: string
+          is_default: boolean | null
+          swift_code: string | null
+          updated_at: string
+        }
+        Insert: {
+          account_holder?: string | null
+          account_number: string
+          bank_name: string
+          branch_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string | null
+          iban?: string | null
+          id?: string
+          is_default?: boolean | null
+          swift_code?: string | null
+          updated_at?: string
+        }
+        Update: {
+          account_holder?: string | null
+          account_number?: string
+          bank_name?: string
+          branch_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string | null
+          iban?: string | null
+          id?: string
+          is_default?: boolean | null
+          swift_code?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       companies: {
         Row: {
           address: string | null
@@ -60,6 +105,54 @@ export type Database = {
         }
         Relationships: []
       }
+      company_info: {
+        Row: {
+          address: string | null
+          created_at: string
+          created_by: string | null
+          email: string | null
+          id: string
+          is_default: boolean | null
+          logo_url: string | null
+          name: string
+          phone: string | null
+          tax_number: string | null
+          trade_registry_number: string | null
+          updated_at: string
+          website: string | null
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          id?: string
+          is_default?: boolean | null
+          logo_url?: string | null
+          name: string
+          phone?: string | null
+          tax_number?: string | null
+          trade_registry_number?: string | null
+          updated_at?: string
+          website?: string | null
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          id?: string
+          is_default?: boolean | null
+          logo_url?: string | null
+          name?: string
+          phone?: string | null
+          tax_number?: string | null
+          trade_registry_number?: string | null
+          updated_at?: string
+          website?: string | null
+        }
+        Relationships: []
+      }
       company_settings: {
         Row: {
           created_at: string | null
@@ -97,6 +190,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      delivery_methods: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          language: Database["public"]["Enums"]["quotation_language"] | null
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          language?: Database["public"]["Enums"]["quotation_language"] | null
+          name: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          language?: Database["public"]["Enums"]["quotation_language"] | null
+          name?: string
+        }
+        Relationships: []
       }
       dictionary: {
         Row: {
@@ -375,6 +498,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      payment_methods: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          language: Database["public"]["Enums"]["quotation_language"] | null
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          language?: Database["public"]["Enums"]["quotation_language"] | null
+          name: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          language?: Database["public"]["Enums"]["quotation_language"] | null
+          name?: string
+        }
+        Relationships: []
       }
       product_categories: {
         Row: {
