@@ -17,6 +17,8 @@ interface QuotationFormModalProps {
   quotation?: any;
 }
 
+type QuotationLanguage = "TR" | "EN" | "PL" | "FR" | "RU" | "DE" | "AR";
+
 interface QuotationFormData {
   title: string;
   quotation_number: string;
@@ -25,7 +27,7 @@ interface QuotationFormData {
   valid_until: string;
   currency: string;
   status: string;
-  language: string;
+  language: QuotationLanguage;
   notes: string;
 }
 
@@ -41,7 +43,7 @@ const QuotationFormModal = ({ open, onOpenChange, quotation }: QuotationFormModa
     valid_until: '',
     currency: 'TRY',
     status: 'draft',
-    language: 'TR',
+    language: 'TR' as QuotationLanguage,
     notes: ''
   });
 
@@ -55,7 +57,7 @@ const QuotationFormModal = ({ open, onOpenChange, quotation }: QuotationFormModa
         valid_until: quotation.valid_until || '',
         currency: quotation.currency || 'TRY',
         status: quotation.status || 'draft',
-        language: quotation.language || 'TR',
+        language: (quotation.language || 'TR') as QuotationLanguage,
         notes: quotation.notes || ''
       });
     } else {
@@ -67,7 +69,7 @@ const QuotationFormModal = ({ open, onOpenChange, quotation }: QuotationFormModa
         valid_until: '',
         currency: 'TRY',
         status: 'draft',
-        language: 'TR',
+        language: 'TR' as QuotationLanguage,
         notes: ''
       });
     }
@@ -94,7 +96,15 @@ const QuotationFormModal = ({ open, onOpenChange, quotation }: QuotationFormModa
       const { error } = await supabase
         .from('quotations')
         .insert({
-          ...data,
+          title: data.title,
+          quotation_number: data.quotation_number,
+          company_id: data.company_id,
+          quotation_date: data.quotation_date,
+          valid_until: data.valid_until,
+          currency: data.currency,
+          status: data.status,
+          language: data.language,
+          notes: data.notes,
           total_amount: 0,
           prepared_by: user.id,
           created_by: user.id
@@ -118,7 +128,17 @@ const QuotationFormModal = ({ open, onOpenChange, quotation }: QuotationFormModa
       
       const { error } = await supabase
         .from('quotations')
-        .update(data)
+        .update({
+          title: data.title,
+          quotation_number: data.quotation_number,
+          company_id: data.company_id,
+          quotation_date: data.quotation_date,
+          valid_until: data.valid_until,
+          currency: data.currency,
+          status: data.status,
+          language: data.language,
+          notes: data.notes
+        })
         .eq('id', quotation.id);
       
       if (error) throw error;
@@ -152,7 +172,11 @@ const QuotationFormModal = ({ open, onOpenChange, quotation }: QuotationFormModa
   };
 
   const handleInputChange = (field: keyof QuotationFormData, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    if (field === 'language') {
+      setFormData(prev => ({ ...prev, [field]: value as QuotationLanguage }));
+    } else {
+      setFormData(prev => ({ ...prev, [field]: value }));
+    }
   };
 
   const isLoading = createMutation.isPending || updateMutation.isPending;
