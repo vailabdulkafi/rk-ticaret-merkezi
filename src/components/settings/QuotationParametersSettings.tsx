@@ -15,9 +15,11 @@ import { toast } from 'sonner';
 interface QuotationParameter {
   id: string;
   name: string;
-  parameter_type: string;
-  is_required: boolean;
-  default_value: string;
+  value: {
+    parameter_type: string;
+    is_required: boolean;
+    default_value: string;
+  };
   language: string;
   created_at: string;
 }
@@ -26,6 +28,7 @@ const QuotationParametersSettings = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingData, setEditingData] = useState<any>(null);
   const [newParameter, setNewParameter] = useState({
     name: '',
     parameter_type: 'text',
@@ -45,7 +48,7 @@ const QuotationParametersSettings = () => {
         .order('created_at', { ascending: false });
       
       if (error) throw error;
-      return data;
+      return data as QuotationParameter[];
     },
     enabled: !!user,
   });
@@ -106,6 +109,7 @@ const QuotationParametersSettings = () => {
       queryClient.invalidateQueries({ queryKey: ['quotation-parameters'] });
       toast.success('Parametre başarıyla güncellendi');
       setEditingId(null);
+      setEditingData(null);
     },
     onError: (error) => {
       toast.error('Parametre güncellenirken hata oluştu: ' + error.message);
@@ -141,6 +145,28 @@ const QuotationParametersSettings = () => {
 
   const handleUpdate = (id: string, data: any) => {
     updateMutation.mutate({ id, data });
+  };
+
+  const startEdit = (parameter: QuotationParameter) => {
+    setEditingId(parameter.id);
+    setEditingData({
+      name: parameter.name,
+      parameter_type: parameter.value.parameter_type,
+      is_required: parameter.value.is_required,
+      default_value: parameter.value.default_value,
+      language: parameter.language
+    });
+  };
+
+  const saveEdit = () => {
+    if (editingId && editingData) {
+      handleUpdate(editingId, editingData);
+    }
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditingData(null);
   };
 
   const getParameterTypeText = (type: string) => {
@@ -310,47 +336,131 @@ const QuotationParametersSettings = () => {
               parameters.map((parameter) => (
                 <Card key={parameter.id} className="border-l-4 border-l-blue-500">
                   <CardContent className="pt-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <h3 className="font-medium text-lg">{parameter.name}</h3>
-                          <Badge variant="outline">
-                            {getParameterTypeText(parameter.value?.parameter_type || 'text')}
-                          </Badge>
-                          <Badge variant="secondary">
-                            {getLanguageText(parameter.language)}
-                          </Badge>
-                          {parameter.value?.is_required && (
-                            <Badge variant="destructive">Zorunlu</Badge>
+                    {editingId === parameter.id ? (
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <Label>Parametre Adı</Label>
+                            <Input
+                              value={editingData?.name || ''}
+                              onChange={(e) => setEditingData(prev => ({ ...prev, name: e.target.value }))}
+                            />
+                          </div>
+                          <div>
+                            <Label>Parametre Tipi</Label>
+                            <Select
+                              value={editingData?.parameter_type || 'text'}
+                              onValueChange={(value) => setEditingData(prev => ({ ...prev, parameter_type: value }))}
+                            >
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="text">Metin</SelectItem>
+                                <SelectItem value="number">Sayı</SelectItem>
+                                <SelectItem value="select">Seçim</SelectItem>
+                                <SelectItem value="boolean">Evet/Hayır</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div>
+                            <Label>Varsayılan Değer</Label>
+                            <Input
+                              value={editingData?.default_value || ''}
+                              onChange={(e) => setEditingData(prev => ({ ...prev, default_value: e.target.value }))}
+                            />
+                          </div>
+                          <div>
+                            <Label>Dil</Label>
+                            <Select
+                              value={editingData?.language || 'TR'}
+                              onValueChange={(value) => setEditingData(prev => ({ ...prev, language: value }))}
+                            >
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="TR">Türkçe</SelectItem>
+                                <SelectItem value="EN">İngilizce</SelectItem>
+                                <SelectItem value="PL">Lehçe</SelectItem>
+                                <SelectItem value="FR">Fransızca</SelectItem>
+                                <SelectItem value="RU">Rusça</SelectItem>
+                                <SelectItem value="DE">Almanca</SelectItem>
+                                <SelectItem value="AR">Arapça</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={editingData?.is_required || false}
+                            onChange={(e) => setEditingData(prev => ({ ...prev, is_required: e.target.checked }))}
+                            className="rounded"
+                          />
+                          <Label>Zorunlu parametre</Label>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            onClick={saveEdit}
+                            disabled={updateMutation.isPending}
+                            className="flex items-center gap-2"
+                          >
+                            <Save className="h-4 w-4" />
+                            {updateMutation.isPending ? 'Kaydediliyor...' : 'Kaydet'}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            onClick={cancelEdit}
+                          >
+                            <X className="h-4 w-4" />
+                            İptal
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-2">
+                            <h3 className="font-medium text-lg">{parameter.name}</h3>
+                            <Badge variant="outline">
+                              {getParameterTypeText(parameter.value.parameter_type)}
+                            </Badge>
+                            <Badge variant="secondary">
+                              {getLanguageText(parameter.language)}
+                            </Badge>
+                            {parameter.value.is_required && (
+                              <Badge variant="destructive">Zorunlu</Badge>
+                            )}
+                          </div>
+                          
+                          {parameter.value.default_value && (
+                            <div className="text-sm text-gray-600">
+                              <span className="font-medium">Varsayılan: </span>
+                              {parameter.value.default_value}
+                            </div>
                           )}
                         </div>
-                        
-                        {parameter.value?.default_value && (
-                          <div className="text-sm text-gray-600">
-                            <span className="font-medium">Varsayılan: </span>
-                            {parameter.value.default_value}
-                          </div>
-                        )}
-                      </div>
 
-                      <div className="flex gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setEditingId(parameter.id)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => deleteMutation.mutate(parameter.id)}
-                          disabled={deleteMutation.isPending}
-                        >
-                          <Trash2 className="h-4 w-4 text-red-500" />
-                        </Button>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => startEdit(parameter)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => deleteMutation.mutate(parameter.id)}
+                            disabled={deleteMutation.isPending}
+                          >
+                            <Trash2 className="h-4 w-4 text-red-500" />
+                          </Button>
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </CardContent>
                 </Card>
               ))
@@ -367,33 +477,6 @@ const QuotationParametersSettings = () => {
                 </Button>
               </div>
             )}
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Örnek Parametreler</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-sm text-gray-600 mb-4">
-            Vinç ekipmanları için yaygın kullanılan parametreler:
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-            {[
-              'Vinç Kapasitesi',
-              'Vinç Aksı',
-              'Kaldırma Yüksekliği',
-              'Yürüme Yolu Uzunluğu',
-              'Kanca Grupları',
-              'Güç Kaynağı',
-              'Kontrol Tipi',
-              'Kablosuz Kumanda'
-            ].map((example) => (
-              <Badge key={example} variant="outline" className="justify-center">
-                {example}
-              </Badge>
-            ))}
           </div>
         </CardContent>
       </Card>

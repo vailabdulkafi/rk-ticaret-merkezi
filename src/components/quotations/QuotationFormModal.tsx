@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -47,6 +46,17 @@ interface SelectedProduct {
   custom_properties?: Record<string, any>;
 }
 
+interface QuotationParameter {
+  id: string;
+  name: string;
+  value: {
+    parameter_type: string;
+    is_required: boolean;
+    default_value: string;
+  };
+  language: string;
+}
+
 const QuotationFormModal = ({ open, onOpenChange }: QuotationFormModalProps) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -65,6 +75,7 @@ const QuotationFormModal = ({ open, onOpenChange }: QuotationFormModalProps) => 
   });
 
   const [selectedProducts, setSelectedProducts] = useState<SelectedProduct[]>([]);
+  const [quotationParameters, setQuotationParameters] = useState<Record<string, any>>({});
   const [activeTab, setActiveTab] = useState('basic');
 
   const { data: companies } = useQuery({
@@ -113,8 +124,23 @@ const QuotationFormModal = ({ open, onOpenChange }: QuotationFormModalProps) => 
     enabled: !!user,
   });
 
+  const { data: parameters } = useQuery({
+    queryKey: ['quotation-parameters'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('company_settings')
+        .select('*')
+        .eq('setting_type', 'quotation_parameter')
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      return data as QuotationParameter[];
+    },
+    enabled: !!user,
+  });
+
   const createMutation = useMutation({
-    mutationFn: async (data: QuotationFormData & { products: SelectedProduct[] }) => {
+    mutationFn: async (data: QuotationFormData & { products: SelectedProduct[]; parameters: Record<string, any> }) => {
       if (!user) throw new Error('Kullanıcı oturumu bulunamadı');
       
       const totalAmount = data.products.reduce((sum, product) => {
@@ -153,7 +179,10 @@ const QuotationFormModal = ({ open, onOpenChange }: QuotationFormModalProps) => 
           discount_percentage: product.discount_percentage,
           total_price: product.unit_price * product.quantity * (1 - product.discount_percentage / 100),
           selected_matrix_id: product.selected_matrix_id || null,
-          custom_properties: product.custom_properties || null
+          custom_properties: { 
+            ...product.custom_properties,
+            quotation_parameters: data.parameters
+          }
         }));
 
         const { error: itemsError } = await supabase
@@ -188,7 +217,21 @@ const QuotationFormModal = ({ open, onOpenChange }: QuotationFormModalProps) => 
       toast.error('Teklif numarası zorunludur');
       return;
     }
-    createMutation.mutate({ ...formData, products: selectedProducts });
+    
+    // Zorunlu parametreleri kontrol et
+    const requiredParams = parameters?.filter(p => p.value.is_required) || [];
+    for (const param of requiredParams) {
+      if (!quotationParameters[param.id] || quotationParameters[param.id].toString().trim() === '') {
+        toast.error(`${param.name} parametresi zorunludur`);
+        return;
+      }
+    }
+    
+    createMutation.mutate({ 
+      ...formData, 
+      products: selectedProducts,
+      parameters: quotationParameters
+    });
   };
 
   const handleInputChange = (field: keyof QuotationFormData, value: string | Date) => {
@@ -238,6 +281,7 @@ const QuotationFormModal = ({ open, onOpenChange }: QuotationFormModalProps) => 
       notes: ''
     });
     setSelectedProducts([]);
+    setQuotationParameters({});
     setActiveTab('basic');
   };
 
@@ -255,6 +299,13 @@ const QuotationFormModal = ({ open, onOpenChange }: QuotationFormModalProps) => 
     }).format(price);
   };
 
+  const handleParameterChange = (parameterId: string, value: any) => {
+    setQuotationParameters(prev => ({
+      ...prev,
+      [parameterId]: value
+    }));
+  };
+
   useEffect(() => {
     if (open && user) {
       setFormData(prev => ({ ...prev, prepared_by: user.id }));
@@ -270,8 +321,9 @@ const QuotationFormModal = ({ open, onOpenChange }: QuotationFormModalProps) => 
         </DialogHeader>
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="basic">Temel Bilgiler</TabsTrigger>
+            <TabsTrigger value="parameters">Teklif Parametreleri</TabsTrigger>
             <TabsTrigger value="products">Ürün Seçimi</TabsTrigger>
             <TabsTrigger value="summary">Özet & Kaydet</TabsTrigger>
           </TabsList>
@@ -432,6 +484,84 @@ const QuotationFormModal = ({ open, onOpenChange }: QuotationFormModalProps) => 
               <div className="flex justify-end">
                 <Button
                   type="button"
+                  onClick={() => setActiveTab('parameters')}
+                >
+                  Parametrelere Geç
+                </Button>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="parameters" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Teklif Parametreleri</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {parameters && parameters.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {parameters.map((parameter) => (
+                        <div key={parameter.id}>
+                          <Label htmlFor={parameter.id}>
+                            {parameter.name}
+                            {parameter.value.is_required && <span className="text-red-500 ml-1">*</span>}
+                          </Label>
+                          {parameter.value.parameter_type === 'text' && (
+                            <Input
+                              id={parameter.id}
+                              value={quotationParameters[parameter.id] || parameter.value.default_value || ''}
+                              onChange={(e) => handleParameterChange(parameter.id, e.target.value)}
+                              placeholder={parameter.value.default_value}
+                              required={parameter.value.is_required}
+                            />
+                          )}
+                          {parameter.value.parameter_type === 'number' && (
+                            <Input
+                              id={parameter.id}
+                              type="number"
+                              value={quotationParameters[parameter.id] || parameter.value.default_value || ''}
+                              onChange={(e) => handleParameterChange(parameter.id, e.target.value)}
+                              placeholder={parameter.value.default_value}
+                              required={parameter.value.is_required}
+                            />
+                          )}
+                          {parameter.value.parameter_type === 'boolean' && (
+                            <Select 
+                              value={quotationParameters[parameter.id] || parameter.value.default_value || ''}
+                              onValueChange={(value) => handleParameterChange(parameter.id, value)}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Seçin" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="true">Evet</SelectItem>
+                                <SelectItem value="false">Hayır</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <p className="text-gray-600">
+                        Henüz teklif parametresi tanımlanmamış. 
+                        Ayarlar sayfasından parametreler ekleyebilirsiniz.
+                      </p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              <div className="flex justify-between">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setActiveTab('basic')}
+                >
+                  Geri
+                </Button>
+                <Button
+                  type="button"
                   onClick={() => setActiveTab('products')}
                 >
                   Ürün Seçimine Geç
@@ -541,7 +671,7 @@ const QuotationFormModal = ({ open, onOpenChange }: QuotationFormModalProps) => 
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => setActiveTab('basic')}
+                  onClick={() => setActiveTab('parameters')}
                 >
                   Geri
                 </Button>
@@ -580,6 +710,22 @@ const QuotationFormModal = ({ open, onOpenChange }: QuotationFormModalProps) => 
                       <p className="text-sm">{formData.language}</p>
                     </div>
                   </div>
+
+                  {parameters && parameters.length > 0 && (
+                    <div>
+                      <Label>Parametreler</Label>
+                      <div className="space-y-1 mt-2">
+                        {parameters.map((parameter) => (
+                          <div key={parameter.id} className="flex justify-between items-center p-2 bg-gray-50 rounded text-sm">
+                            <span>{parameter.name}:</span>
+                            <span className="font-medium">
+                              {quotationParameters[parameter.id] || parameter.value.default_value || '-'}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   <div>
                     <Label>Seçili Ürünler ({selectedProducts.length})</Label>

@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -23,6 +23,11 @@ interface ProductFormData {
   currency: string;
   unit: string;
   stock_quantity: string;
+  brand: string;
+  model: string;
+  category_id: string;
+  hs_code: string;
+  warranty_period: string;
 }
 
 const ProductFormModal = ({ open, onOpenChange }: ProductFormModalProps) => {
@@ -35,7 +40,26 @@ const ProductFormModal = ({ open, onOpenChange }: ProductFormModalProps) => {
     unit_price: '',
     currency: 'TRY',
     unit: 'adet',
-    stock_quantity: '0'
+    stock_quantity: '0',
+    brand: '',
+    model: '',
+    category_id: '',
+    hs_code: '',
+    warranty_period: ''
+  });
+
+  const { data: categories } = useQuery({
+    queryKey: ['product-categories'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('product_categories')
+        .select('*')
+        .order('name');
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user,
   });
 
   const createMutation = useMutation({
@@ -51,6 +75,11 @@ const ProductFormModal = ({ open, onOpenChange }: ProductFormModalProps) => {
           currency: data.currency,
           unit: data.unit,
           stock_quantity: parseInt(data.stock_quantity),
+          brand: data.brand || null,
+          model: data.model || null,
+          category_id: data.category_id || null,
+          hs_code: data.hs_code || null,
+          warranty_period: data.warranty_period || null,
           created_by: user.id
         });
       
@@ -66,7 +95,12 @@ const ProductFormModal = ({ open, onOpenChange }: ProductFormModalProps) => {
         unit_price: '',
         currency: 'TRY',
         unit: 'adet',
-        stock_quantity: '0'
+        stock_quantity: '0',
+        brand: '',
+        model: '',
+        category_id: '',
+        hs_code: '',
+        warranty_period: ''
       });
     },
     onError: (error) => {
@@ -99,14 +133,52 @@ const ProductFormModal = ({ open, onOpenChange }: ProductFormModalProps) => {
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <Label htmlFor="name">Ürün Adı *</Label>
-            <Input
-              id="name"
-              value={formData.name}
-              onChange={(e) => handleInputChange('name', e.target.value)}
-              required
-            />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="name">Ürün Adı *</Label>
+              <Input
+                id="name"
+                value={formData.name}
+                onChange={(e) => handleInputChange('name', e.target.value)}
+                required
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="category_id">Kategori</Label>
+              <Select value={formData.category_id} onValueChange={(value) => handleInputChange('category_id', value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Kategori seçin" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories?.map((category) => (
+                    <SelectItem key={category.id} value={category.id}>
+                      {category.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="brand">Marka</Label>
+              <Input
+                id="brand"
+                value={formData.brand}
+                onChange={(e) => handleInputChange('brand', e.target.value)}
+                placeholder="Ürün markası"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="model">Model</Label>
+              <Input
+                id="model"
+                value={formData.model}
+                onChange={(e) => handleInputChange('model', e.target.value)}
+                placeholder="Ürün modeli"
+              />
+            </div>
           </div>
 
           <div>
@@ -165,15 +237,37 @@ const ProductFormModal = ({ open, onOpenChange }: ProductFormModalProps) => {
             </div>
           </div>
 
-          <div>
-            <Label htmlFor="stock_quantity">Stok Miktarı</Label>
-            <Input
-              id="stock_quantity"
-              type="number"
-              min="0"
-              value={formData.stock_quantity}
-              onChange={(e) => handleInputChange('stock_quantity', e.target.value)}
-            />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <Label htmlFor="stock_quantity">Stok Miktarı</Label>
+              <Input
+                id="stock_quantity"
+                type="number"
+                min="0"
+                value={formData.stock_quantity}
+                onChange={(e) => handleInputChange('stock_quantity', e.target.value)}
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="hs_code">HS Kodu</Label>
+              <Input
+                id="hs_code"
+                value={formData.hs_code}
+                onChange={(e) => handleInputChange('hs_code', e.target.value)}
+                placeholder="HS kodu"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="warranty_period">Garanti Süresi</Label>
+              <Input
+                id="warranty_period"
+                value={formData.warranty_period}
+                onChange={(e) => handleInputChange('warranty_period', e.target.value)}
+                placeholder="Örn: 2 yıl"
+              />
+            </div>
           </div>
 
           <div className="flex justify-end gap-2 pt-4">

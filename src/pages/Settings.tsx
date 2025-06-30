@@ -1,5 +1,4 @@
 
-
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/hooks/useAuth';
 import CompanyInfoSettings from '@/components/settings/CompanyInfoSettings';
@@ -43,7 +42,6 @@ const Settings = () => {
       const primary = themeSettings.find(s => s.name === 'primary_color');
       const secondary = themeSettings.find(s => s.name === 'secondary_color');
       
-      // Değerleri doğrudan string olarak kullan, JSON parse etme
       if (primary?.value) {
         const primaryValue = typeof primary.value === 'string' ? primary.value : JSON.stringify(primary.value).replace(/"/g, '');
         setPrimaryColor(primaryValue);
@@ -57,19 +55,40 @@ const Settings = () => {
 
   const updateThemeMutation = useMutation({
     mutationFn: async ({ name, value }: { name: string; value: string }) => {
-      const { error } = await supabase
+      // Önce mevcut kaydı kontrol et
+      const { data: existing } = await supabase
         .from('company_settings')
-        .upsert({
-          setting_type: 'theme',
-          name,
-          value: value, // Değeri doğrudan string olarak kaydet
-          language: 'TR',
-          created_by: user?.id
-        }, {
-          onConflict: 'setting_type,name'
-        });
-      
-      if (error) throw error;
+        .select('id')
+        .eq('setting_type', 'theme')
+        .eq('name', name)
+        .single();
+
+      if (existing) {
+        // Güncelle
+        const { error } = await supabase
+          .from('company_settings')
+          .update({
+            value: value,
+            language: 'TR',
+            created_by: user?.id
+          })
+          .eq('id', existing.id);
+        
+        if (error) throw error;
+      } else {
+        // Yeni kayıt ekle
+        const { error } = await supabase
+          .from('company_settings')
+          .insert({
+            setting_type: 'theme',
+            name,
+            value: value,
+            language: 'TR',
+            created_by: user?.id
+          });
+        
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['theme-settings'] });
@@ -80,9 +99,13 @@ const Settings = () => {
     },
   });
 
-  const handleSaveTheme = () => {
-    updateThemeMutation.mutate({ name: 'primary_color', value: primaryColor });
-    updateThemeMutation.mutate({ name: 'secondary_color', value: secondaryColor });
+  const handleSaveTheme = async () => {
+    try {
+      await updateThemeMutation.mutateAsync({ name: 'primary_color', value: primaryColor });
+      await updateThemeMutation.mutateAsync({ name: 'secondary_color', value: secondaryColor });
+    } catch (error) {
+      console.error('Tema kaydetme hatası:', error);
+    }
   };
 
   if (!user) {
