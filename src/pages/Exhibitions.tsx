@@ -7,15 +7,19 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Search, Calendar, Edit, Trash2, MapPin } from 'lucide-react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Plus, Search, Calendar, Edit, Trash2, MapPin, DollarSign } from 'lucide-react';
 import { toast } from 'sonner';
 import ExhibitionFormModal from '@/components/exhibitions/ExhibitionFormModal';
+import ExhibitionCostModal from '@/components/exhibitions/ExhibitionCostModal';
 
 const Exhibitions = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
   const [showFormModal, setShowFormModal] = useState(false);
+  const [showCostModal, setShowCostModal] = useState(false);
+  const [selectedExhibition, setSelectedExhibition] = useState<any>(null);
 
   const { data: exhibitions, isLoading } = useQuery({
     queryKey: ['exhibitions'],
@@ -99,16 +103,17 @@ const Exhibitions = () => {
     }
   };
 
+  const handleCostClick = (exhibition: any) => {
+    setSelectedExhibition(exhibition);
+    setShowCostModal(true);
+  };
+
   if (isLoading) {
     return (
       <div className="p-6 space-y-6">
         <div className="animate-pulse space-y-4">
           <div className="h-8 bg-gray-200 rounded w-1/4"></div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[...Array(6)].map((_, i) => (
-              <div key={i} className="h-48 bg-gray-200 rounded"></div>
-            ))}
-          </div>
+          <div className="h-48 bg-gray-200 rounded"></div>
         </div>
       </div>
     );
@@ -145,76 +150,98 @@ const Exhibitions = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredExhibitions.map((exhibition) => (
-          <Card key={exhibition.id} className="hover:shadow-lg transition-shadow">
-            <CardHeader className="pb-3">
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-indigo-50 rounded-lg">
-                    <Calendar className="h-5 w-5 text-indigo-600" />
-                  </div>
-                  <div>
-                    <CardTitle className="text-lg">{exhibition.name}</CardTitle>
-                    <Badge className={`mt-1 ${getStatusColor(exhibition.status)}`}>
+      <Card>
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Fuar Adı</TableHead>
+                <TableHead>Tür</TableHead>
+                <TableHead>Konum</TableHead>
+                <TableHead>Tarih</TableHead>
+                <TableHead>Durum</TableHead>
+                <TableHead>Hedef Maliyet</TableHead>
+                <TableHead>Gerçekleşen</TableHead>
+                <TableHead>İşlemler</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredExhibitions.map((exhibition) => (
+                <TableRow key={exhibition.id}>
+                  <TableCell className="font-medium">{exhibition.name}</TableCell>
+                  <TableCell>{getTypeText(exhibition.type)}</TableCell>
+                  <TableCell>
+                    {exhibition.location && (
+                      <div className="flex items-center gap-1">
+                        <MapPin className="h-4 w-4 text-gray-400" />
+                        {exhibition.location}
+                      </div>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {exhibition.start_date && (
+                      <div className="text-sm">
+                        {new Date(exhibition.start_date).toLocaleDateString('tr-TR')}
+                        {exhibition.end_date && (
+                          <span> - {new Date(exhibition.end_date).toLocaleDateString('tr-TR')}</span>
+                        )}
+                      </div>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <Badge className={getStatusColor(exhibition.status)}>
                       {getStatusText(exhibition.status)}
                     </Badge>
-                  </div>
-                </div>
-                <div className="flex gap-1">
-                  <Button variant="ghost" size="sm">
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
-                    onClick={() => deleteMutation.mutate(exhibition.id)}
-                    disabled={deleteMutation.isPending}
-                  >
-                    <Trash2 className="h-4 w-4 text-red-500" />
-                  </Button>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="text-sm text-gray-600">
-                {getTypeText(exhibition.type)}
-              </div>
-              
-              {exhibition.location && (
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <MapPin className="h-4 w-4 text-gray-400 flex-shrink-0" />
-                  {exhibition.location}
-                </div>
-              )}
-
-              {(exhibition.start_date || exhibition.end_date) && (
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <Calendar className="h-4 w-4 text-gray-400 flex-shrink-0" />
-                  <div>
-                    {exhibition.start_date && new Date(exhibition.start_date).toLocaleDateString('tr-TR')}
-                    {exhibition.start_date && exhibition.end_date && ' - '}
-                    {exhibition.end_date && new Date(exhibition.end_date).toLocaleDateString('tr-TR')}
-                  </div>
-                </div>
-              )}
-
-              {exhibition.notes && (
-                <div className="text-sm text-gray-500 line-clamp-2">
-                  {exhibition.notes}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+                  </TableCell>
+                  <TableCell>
+                    {exhibition.target_cost > 0 && (
+                      <span className="text-sm">
+                        {exhibition.target_cost} {exhibition.cost_currency}
+                      </span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {exhibition.actual_cost > 0 && (
+                      <span className="text-sm">
+                        {exhibition.actual_cost} {exhibition.cost_currency}
+                      </span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex gap-1">
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => handleCostClick(exhibition)}
+                      >
+                        <DollarSign className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="sm">
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => deleteMutation.mutate(exhibition.id)}
+                        disabled={deleteMutation.isPending}
+                      >
+                        <Trash2 className="h-4 w-4 text-red-500" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
 
       {filteredExhibitions.length === 0 && (
         <div className="text-center py-12">
           <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-900 mb-2">Fuar bulunamadı</h3>
           <p className="text-gray-600 mb-4">
-            {searchTerm ? 'Arama kriterlerinize uygun fuar bulunamadı.' : 'Henüz fuar eklenmemiş. Sağ üstten "Yeni Fuar" butonuna tıklayarak yeni fuar oluşturabilirsiniz.'}
+            {searchTerm ? 'Arama kriterlerinize uygun fuar bulunamadı.' : 'Henüz fuar eklenmemiş.'}
           </p>
           <Button onClick={() => setShowFormModal(true)}>
             <Plus className="h-4 w-4 mr-2" />
@@ -226,6 +253,12 @@ const Exhibitions = () => {
       <ExhibitionFormModal 
         open={showFormModal}
         onOpenChange={setShowFormModal}
+      />
+      
+      <ExhibitionCostModal
+        open={showCostModal}
+        onOpenChange={setShowCostModal}
+        exhibition={selectedExhibition}
       />
     </div>
   );

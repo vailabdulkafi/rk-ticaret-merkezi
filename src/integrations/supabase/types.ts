@@ -178,6 +178,8 @@ export type Database = {
       }
       exhibitions: {
         Row: {
+          actual_cost: number | null
+          cost_currency: string | null
           created_at: string
           created_by: string
           end_date: string | null
@@ -187,10 +189,13 @@ export type Database = {
           notes: string | null
           start_date: string | null
           status: string
+          target_cost: number | null
           type: string
           updated_at: string
         }
         Insert: {
+          actual_cost?: number | null
+          cost_currency?: string | null
           created_at?: string
           created_by: string
           end_date?: string | null
@@ -200,10 +205,13 @@ export type Database = {
           notes?: string | null
           start_date?: string | null
           status?: string
+          target_cost?: number | null
           type: string
           updated_at?: string
         }
         Update: {
+          actual_cost?: number | null
+          cost_currency?: string | null
           created_at?: string
           created_by?: string
           end_date?: string | null
@@ -213,6 +221,7 @@ export type Database = {
           notes?: string | null
           start_date?: string | null
           status?: string
+          target_cost?: number | null
           type?: string
           updated_at?: string
         }
