@@ -1,3 +1,4 @@
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/hooks/useAuth';
 import CompanyInfoSettings from '@/components/settings/CompanyInfoSettings';
@@ -39,8 +40,16 @@ const Settings = () => {
     if (themeSettings) {
       const primary = themeSettings.find(s => s.name === 'primary_color');
       const secondary = themeSettings.find(s => s.name === 'secondary_color');
-      if (primary) setPrimaryColor(JSON.parse(primary.value as string));
-      if (secondary) setSecondaryColor(JSON.parse(secondary.value as string));
+      
+      // Değerleri doğrudan string olarak kullan, JSON parse etme
+      if (primary?.value) {
+        const primaryValue = typeof primary.value === 'string' ? primary.value : JSON.stringify(primary.value).replace(/"/g, '');
+        setPrimaryColor(primaryValue);
+      }
+      if (secondary?.value) {
+        const secondaryValue = typeof secondary.value === 'string' ? secondary.value : JSON.stringify(secondary.value).replace(/"/g, '');
+        setSecondaryColor(secondaryValue);
+      }
     }
   }, [themeSettings]);
 
@@ -51,7 +60,7 @@ const Settings = () => {
         .upsert({
           setting_type: 'theme',
           name,
-          value: JSON.stringify(value),
+          value: value, // Değeri doğrudan string olarak kaydet
           language: 'TR',
           created_by: user?.id
         }, {
@@ -122,7 +131,6 @@ const Settings = () => {
         </TabsContent>
 
         <TabsContent value="theme" className="mt-6">
-          {/* Keep existing theme settings card */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
