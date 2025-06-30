@@ -10,6 +10,7 @@ import {
   FileText, 
   ShoppingCart, 
   Calendar,
+  Settings,
   LogOut,
   Menu,
   X,
@@ -48,6 +49,7 @@ const Layout = () => {
     { name: 'Teklifler', href: '/quotations', icon: FileText },
     { name: 'Siparişler', href: '/orders', icon: ShoppingCart },
     { name: 'Fuarlar', href: '/exhibitions', icon: Calendar },
+    { name: 'Ayarlar', href: '/settings', icon: Settings },
   ];
 
   const handleSignOut = async () => {
