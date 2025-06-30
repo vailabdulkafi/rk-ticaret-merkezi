@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -28,13 +28,16 @@ const Settings = () => {
       return data;
     },
     enabled: !!user,
-    onSuccess: (data) => {
-      const primary = data?.find(s => s.name === 'primary_color');
-      const secondary = data?.find(s => s.name === 'secondary_color');
+  });
+
+  useEffect(() => {
+    if (themeSettings) {
+      const primary = themeSettings.find(s => s.name === 'primary_color');
+      const secondary = themeSettings.find(s => s.name === 'secondary_color');
       if (primary) setPrimaryColor(JSON.parse(primary.value as string));
       if (secondary) setSecondaryColor(JSON.parse(secondary.value as string));
     }
-  });
+  }, [themeSettings]);
 
   const updateThemeMutation = useMutation({
     mutationFn: async ({ name, value }: { name: string; value: string }) => {
