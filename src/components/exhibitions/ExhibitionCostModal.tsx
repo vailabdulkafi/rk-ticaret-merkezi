@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -17,9 +17,17 @@ interface ExhibitionCostModalProps {
 
 const ExhibitionCostModal = ({ open, onOpenChange, exhibition }: ExhibitionCostModalProps) => {
   const queryClient = useQueryClient();
-  const [targetCost, setTargetCost] = useState(exhibition?.target_cost?.toString() || '');
-  const [actualCost, setActualCost] = useState(exhibition?.actual_cost?.toString() || '');
-  const [currency, setCurrency] = useState(exhibition?.cost_currency || 'TRY');
+  const [targetCost, setTargetCost] = useState('');
+  const [actualCost, setActualCost] = useState('');
+  const [currency, setCurrency] = useState('TRY');
+
+  useEffect(() => {
+    if (exhibition) {
+      setTargetCost(exhibition.target_cost?.toString() || '');
+      setActualCost(exhibition.actual_cost?.toString() || '');
+      setCurrency(exhibition.cost_currency || 'TRY');
+    }
+  }, [exhibition]);
 
   const updateCostMutation = useMutation({
     mutationFn: async (data: { target_cost: number; actual_cost: number; cost_currency: string }) => {
@@ -49,11 +57,13 @@ const ExhibitionCostModal = ({ open, onOpenChange, exhibition }: ExhibitionCostM
     });
   };
 
+  if (!exhibition) return null;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Maliyet Yönetimi - {exhibition?.name}</DialogTitle>
+          <DialogTitle>Maliyet Yönetimi - {exhibition.name}</DialogTitle>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">

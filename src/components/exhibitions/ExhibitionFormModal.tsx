@@ -23,6 +23,8 @@ interface ExhibitionFormData {
   start_date: string;
   end_date: string;
   notes: string;
+  target_cost: string;
+  cost_currency: string;
 }
 
 const ExhibitionFormModal = ({ open, onOpenChange }: ExhibitionFormModalProps) => {
@@ -35,7 +37,9 @@ const ExhibitionFormModal = ({ open, onOpenChange }: ExhibitionFormModalProps) =
     location: '',
     start_date: '',
     end_date: '',
-    notes: ''
+    notes: '',
+    target_cost: '',
+    cost_currency: 'TRY'
   });
 
   const createMutation = useMutation({
@@ -45,9 +49,14 @@ const ExhibitionFormModal = ({ open, onOpenChange }: ExhibitionFormModalProps) =
       const { error } = await supabase
         .from('exhibitions')
         .insert({
-          ...data,
+          name: data.name,
+          type: data.type,
+          location: data.location || null,
           start_date: data.start_date || null,
           end_date: data.end_date || null,
+          notes: data.notes || null,
+          target_cost: data.target_cost ? parseFloat(data.target_cost) : 0,
+          cost_currency: data.cost_currency,
           created_by: user.id
         });
       
@@ -63,7 +72,9 @@ const ExhibitionFormModal = ({ open, onOpenChange }: ExhibitionFormModalProps) =
         location: '',
         start_date: '',
         end_date: '',
-        notes: ''
+        notes: '',
+        target_cost: '',
+        cost_currency: 'TRY'
       });
     },
     onError: (error) => {
@@ -151,6 +162,34 @@ const ExhibitionFormModal = ({ open, onOpenChange }: ExhibitionFormModalProps) =
                 value={formData.end_date}
                 onChange={(e) => handleInputChange('end_date', e.target.value)}
               />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="target_cost">Hedef Maliyet</Label>
+              <Input
+                id="target_cost"
+                type="number"
+                step="0.01"
+                value={formData.target_cost}
+                onChange={(e) => handleInputChange('target_cost', e.target.value)}
+                placeholder="0.00"
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="cost_currency">Para Birimi</Label>
+              <Select value={formData.cost_currency} onValueChange={(value) => handleInputChange('cost_currency', value)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="TRY">TRY</SelectItem>
+                  <SelectItem value="USD">USD</SelectItem>
+                  <SelectItem value="EUR">EUR</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
