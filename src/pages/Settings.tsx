@@ -1,4 +1,5 @@
 
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/hooks/useAuth';
 import CompanyInfoSettings from '@/components/settings/CompanyInfoSettings';
@@ -6,6 +7,7 @@ import BankInfoSettings from '@/components/settings/BankInfoSettings';
 import PaymentMethodsSettings from '@/components/settings/PaymentMethodsSettings';
 import DeliveryMethodsSettings from '@/components/settings/DeliveryMethodsSettings';
 import DictionarySettings from '@/components/settings/DictionarySettings';
+import QuotationParametersSettings from '@/components/settings/QuotationParametersSettings';
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -101,11 +103,12 @@ const Settings = () => {
       </div>
 
       <Tabs defaultValue="company" className="w-full">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="company">Firma Bilgileri</TabsTrigger>
           <TabsTrigger value="bank">Banka Bilgileri</TabsTrigger>
           <TabsTrigger value="payment">Ödeme Şekilleri</TabsTrigger>
           <TabsTrigger value="delivery">Teslim Şekilleri</TabsTrigger>
+          <TabsTrigger value="parameters">Teklif Parametreleri</TabsTrigger>
           <TabsTrigger value="dictionary">Sözlük</TabsTrigger>
           <TabsTrigger value="theme">Tema</TabsTrigger>
         </TabsList>
@@ -124,6 +127,10 @@ const Settings = () => {
 
         <TabsContent value="delivery" className="mt-6">
           <DeliveryMethodsSettings />
+        </TabsContent>
+
+        <TabsContent value="parameters" className="mt-6">
+          <QuotationParametersSettings />
         </TabsContent>
 
         <TabsContent value="dictionary" className="mt-6">
