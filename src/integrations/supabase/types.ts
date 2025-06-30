@@ -248,6 +248,125 @@ export type Database = {
         }
         Relationships: []
       }
+      employee_hierarchy: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          employee_id: string | null
+          id: string
+          manager_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          employee_id?: string | null
+          id?: string
+          manager_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          employee_id?: string | null
+          id?: string
+          manager_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_hierarchy_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_hierarchy_manager_id_fkey"
+            columns: ["manager_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      employee_roles: {
+        Row: {
+          assigned_at: string
+          assigned_by: string | null
+          employee_id: string | null
+          id: string
+          is_active: boolean | null
+          role: Database["public"]["Enums"]["employee_role"]
+        }
+        Insert: {
+          assigned_at?: string
+          assigned_by?: string | null
+          employee_id?: string | null
+          id?: string
+          is_active?: boolean | null
+          role: Database["public"]["Enums"]["employee_role"]
+        }
+        Update: {
+          assigned_at?: string
+          assigned_by?: string | null
+          employee_id?: string | null
+          id?: string
+          is_active?: boolean | null
+          role?: Database["public"]["Enums"]["employee_role"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_roles_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      employees: {
+        Row: {
+          address: string | null
+          created_at: string
+          created_by: string | null
+          department: string | null
+          employee_number: string | null
+          hire_date: string | null
+          id: string
+          is_active: boolean | null
+          phone: string | null
+          position: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          created_by?: string | null
+          department?: string | null
+          employee_number?: string | null
+          hire_date?: string | null
+          id?: string
+          is_active?: boolean | null
+          phone?: string | null
+          position?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          created_by?: string | null
+          department?: string | null
+          employee_number?: string | null
+          hire_date?: string | null
+          id?: string
+          is_active?: boolean | null
+          phone?: string | null
+          position?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       exhibition_costs: {
         Row: {
           amount: number
@@ -1114,10 +1233,21 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      can_manage_employee: {
+        Args: { _user_id: string; _target_employee_id: string }
+        Returns: boolean
+      }
+      has_employee_role: {
+        Args: {
+          _user_id: string
+          _role: Database["public"]["Enums"]["employee_role"]
+        }
+        Returns: boolean
+      }
     }
     Enums: {
       currency_type: "EUR" | "USD" | "TRY"
+      employee_role: "employee" | "specialist" | "manager" | "director"
       quotation_language: "TR" | "EN" | "PL" | "FR" | "RU" | "DE" | "AR"
     }
     CompositeTypes: {
@@ -1235,6 +1365,7 @@ export const Constants = {
   public: {
     Enums: {
       currency_type: ["EUR", "USD", "TRY"],
+      employee_role: ["employee", "specialist", "manager", "director"],
       quotation_language: ["TR", "EN", "PL", "FR", "RU", "DE", "AR"],
     },
   },

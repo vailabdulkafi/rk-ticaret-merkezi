@@ -14,7 +14,8 @@ import {
   LogOut,
   Menu,
   X,
-  User
+  User,
+  UserCheck
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -45,6 +46,7 @@ const Layout = () => {
   const navigation = [
     { name: 'Dashboard', href: '/', icon: LayoutDashboard },
     { name: 'Firmalar', href: '/companies', icon: Users },
+    { name: 'Çalışanlar', href: '/employees', icon: UserCheck },
     { name: 'Ürünler', href: '/products', icon: Package },
     { name: 'Teklifler', href: '/quotations', icon: FileText },
     { name: 'Siparişler', href: '/orders', icon: ShoppingCart },

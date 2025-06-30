@@ -8,6 +8,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import Layout from "@/components/Layout";
 import Dashboard from "@/pages/Dashboard";
 import Companies from "@/pages/Companies";
+import Employees from "@/pages/Employees";
 import Products from "@/pages/Products";
 import Quotations from "@/pages/Quotations";
 import Orders from "@/pages/Orders";
@@ -30,6 +31,7 @@ const App = () => (
             <Route path="/" element={<Layout />}>
               <Route index element={<Dashboard />} />
               <Route path="companies" element={<Companies />} />
+              <Route path="employees" element={<Employees />} />
               <Route path="products" element={<Products />} />
               <Route path="quotations" element={<Quotations />} />
               <Route path="orders" element={<Orders />} />
