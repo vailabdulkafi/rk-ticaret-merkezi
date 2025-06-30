@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -12,6 +11,7 @@ import { Plus, Search, Edit, Trash2, Package, Settings } from 'lucide-react';
 import { toast } from 'sonner';
 import ProductFormModal from '@/components/products/ProductFormModal';
 import ProductSubItemsModal from '@/components/products/ProductSubItemsModal';
+import ProductMatrixModal from '@/components/products/ProductMatrixModal';
 
 const Products = () => {
   const { user } = useAuth();
@@ -19,6 +19,7 @@ const Products = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showFormModal, setShowFormModal] = useState(false);
   const [showSubItemsModal, setShowSubItemsModal] = useState(false);
+  const [showMatrixModal, setShowMatrixModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
 
   const { data: products, isLoading } = useQuery({
@@ -65,6 +66,11 @@ const Products = () => {
   const handleSubItemsClick = (product: any) => {
     setSelectedProduct(product);
     setShowSubItemsModal(true);
+  };
+
+  const handleMatrixClick = (product: any) => {
+    setSelectedProduct(product);
+    setShowMatrixModal(true);
   };
 
   if (isLoading) {
@@ -154,6 +160,14 @@ const Products = () => {
                       <Button 
                         variant="ghost" 
                         size="sm"
+                        onClick={() => handleMatrixClick(product)}
+                        title="Matrisler"
+                      >
+                        <Package className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
                         onClick={() => handleSubItemsClick(product)}
                         title="Alt Ürünler"
                       >
@@ -201,6 +215,12 @@ const Products = () => {
       <ProductSubItemsModal
         open={showSubItemsModal}
         onOpenChange={setShowSubItemsModal}
+        product={selectedProduct}
+      />
+
+      <ProductMatrixModal
+        open={showMatrixModal}
+        onOpenChange={setShowMatrixModal}
         product={selectedProduct}
       />
     </div>
