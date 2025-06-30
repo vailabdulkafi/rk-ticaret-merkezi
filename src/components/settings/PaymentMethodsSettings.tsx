@@ -14,11 +14,13 @@ import { toast } from 'sonner';
 import { Banknote, Plus, Edit, Trash2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
+type LanguageType = 'TR' | 'EN' | 'PL' | 'FR' | 'RU' | 'DE' | 'AR';
+
 interface PaymentMethod {
   id: string;
   name: string;
   description: string | null;
-  language: string | null;
+  language: LanguageType | null;
   is_active: boolean | null;
 }
 
@@ -30,7 +32,7 @@ const PaymentMethodsSettings = () => {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    language: 'TR',
+    language: 'TR' as LanguageType,
     is_active: true
   });
 
@@ -95,7 +97,7 @@ const PaymentMethodsSettings = () => {
     setFormData({
       name: '',
       description: '',
-      language: 'TR',
+      language: 'TR' as LanguageType,
       is_active: true
     });
     setEditingMethod(null);
@@ -106,7 +108,7 @@ const PaymentMethodsSettings = () => {
     setFormData({
       name: method.name,
       description: method.description || '',
-      language: method.language || 'TR',
+      language: (method.language || 'TR') as LanguageType,
       is_active: method.is_active !== false
     });
     setIsModalOpen(true);
@@ -179,7 +181,7 @@ const PaymentMethodsSettings = () => {
                 </div>
                 <div>
                   <Label htmlFor="language">Dil</Label>
-                  <Select value={formData.language} onValueChange={(value) => setFormData({ ...formData, language: value })}>
+                  <Select value={formData.language} onValueChange={(value: LanguageType) => setFormData({ ...formData, language: value })}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>

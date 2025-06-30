@@ -13,11 +13,13 @@ import { toast } from 'sonner';
 import { BookOpen, Plus, Edit, Trash2, Search } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
+type LanguageType = 'TR' | 'EN' | 'PL' | 'FR' | 'RU' | 'DE' | 'AR';
+
 interface DictionaryEntry {
   id: string;
   key_name: string;
   value: string;
-  language: string;
+  language: LanguageType;
   category: string | null;
 }
 
@@ -27,11 +29,11 @@ const DictionarySettings = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingEntry, setEditingEntry] = useState<DictionaryEntry | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedLanguage, setSelectedLanguage] = useState('TR');
+  const [selectedLanguage, setSelectedLanguage] = useState<LanguageType>('TR');
   const [formData, setFormData] = useState({
     key_name: '',
     value: '',
-    language: 'TR',
+    language: 'TR' as LanguageType,
     category: 'general'
   });
 
@@ -189,7 +191,7 @@ const DictionarySettings = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="language">Dil</Label>
-                    <Select value={formData.language} onValueChange={(value) => setFormData({ ...formData, language: value })}>
+                    <Select value={formData.language} onValueChange={(value: LanguageType) => setFormData({ ...formData, language: value })}>
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
@@ -241,7 +243,7 @@ const DictionarySettings = () => {
             </div>
           </div>
           <div>
-            <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
+            <Select value={selectedLanguage} onValueChange={(value: LanguageType) => setSelectedLanguage(value)}>
               <SelectTrigger className="w-40">
                 <SelectValue />
               </SelectTrigger>
