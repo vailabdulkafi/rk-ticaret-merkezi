@@ -134,7 +134,16 @@ const QuotationFormModal = ({ open, onOpenChange }: QuotationFormModalProps) => 
         .order('created_at', { ascending: false });
       
       if (error) throw error;
-      return data as QuotationParameter[];
+      
+      // Cast the data to QuotationParameter type with proper value structure
+      return data.map(item => ({
+        ...item,
+        value: item.value as {
+          parameter_type: string;
+          is_required: boolean;
+          default_value: string;
+        }
+      })) as QuotationParameter[];
     },
     enabled: !!user,
   });
