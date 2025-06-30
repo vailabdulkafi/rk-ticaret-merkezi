@@ -3,11 +3,12 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Search, Building2, Mail, Phone, MapPin, Edit, Trash2 } from 'lucide-react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Plus, Search, Edit, Trash2, Building2, Mail, Phone, MapPin } from 'lucide-react';
 import { toast } from 'sonner';
 import CompanyFormModal from '@/components/companies/CompanyFormModal';
 
@@ -52,15 +53,33 @@ const Companies = () => {
   const filteredCompanies = companies?.filter(company =>
     company.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     company.contact_person?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    company.email?.toLowerCase().includes(searchTerm.toLowerCase())
+    company.city?.toLowerCase().includes(searchTerm.toLowerCase())
   ) || [];
 
-  const getTypeColor = (type: string) => {
-    return type === 'customer' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800';
+  const getTypeText = (type: string) => {
+    switch (type) {
+      case 'customer':
+        return 'Müşteri';
+      case 'supplier':
+        return 'Tedarikçi';
+      case 'both':
+        return 'Müşteri & Tedarikçi';
+      default:
+        return type;
+    }
   };
 
-  const getTypeText = (type: string) => {
-    return type === 'customer' ? 'Müşteri' : 'Partner';
+  const getTypeColor = (type: string) => {
+    switch (type) {
+      case 'customer':
+        return 'bg-blue-100 text-blue-800';
+      case 'supplier':
+        return 'bg-green-100 text-green-800';
+      case 'both':
+        return 'bg-purple-100 text-purple-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
   };
 
   if (isLoading) {
@@ -68,11 +87,7 @@ const Companies = () => {
       <div className="p-6 space-y-6">
         <div className="animate-pulse space-y-4">
           <div className="h-8 bg-gray-200 rounded w-1/4"></div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[...Array(6)].map((_, i) => (
-              <div key={i} className="h-48 bg-gray-200 rounded"></div>
-            ))}
-          </div>
+          <div className="h-48 bg-gray-200 rounded"></div>
         </div>
       </div>
     );
@@ -83,7 +98,7 @@ const Companies = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Firmalar</h1>
-          <p className="text-gray-600">Müşteri ve partner firmalarınızı yönetin</p>
+          <p className="text-gray-600">Müşteri ve tedarikçi firmalarını yönetin</p>
         </div>
         <Button 
           className="flex items-center gap-2"
@@ -109,78 +124,87 @@ const Companies = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredCompanies.map((company) => (
-          <Card key={company.id} className="hover:shadow-lg transition-shadow">
-            <CardHeader className="pb-3">
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-blue-50 rounded-lg">
-                    <Building2 className="h-5 w-5 text-blue-600" />
-                  </div>
-                  <div>
-                    <CardTitle className="text-lg">{company.name}</CardTitle>
-                    <Badge className={`mt-1 ${getTypeColor(company.type)}`}>
+      <Card>
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Firma Adı</TableHead>
+                <TableHead>Tip</TableHead>
+                <TableHead>İletişim Kişisi</TableHead>
+                <TableHead>E-posta</TableHead>
+                <TableHead>Telefon</TableHead>
+                <TableHead>Şehir</TableHead>
+                <TableHead>İşlemler</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredCompanies.map((company) => (
+                <TableRow key={company.id}>
+                  <TableCell className="font-medium">
+                    <div className="flex items-center gap-2">
+                      <Building2 className="h-4 w-4 text-gray-400" />
+                      {company.name}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <Badge className={getTypeColor(company.type)}>
                       {getTypeText(company.type)}
                     </Badge>
-                  </div>
-                </div>
-                <div className="flex gap-1">
-                  <Button variant="ghost" size="sm">
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
-                    onClick={() => deleteMutation.mutate(company.id)}
-                    disabled={deleteMutation.isPending}
-                  >
-                    <Trash2 className="h-4 w-4 text-red-500" />
-                  </Button>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {company.contact_person && (
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <div className="w-4 h-4 rounded-full bg-gray-300 flex-shrink-0"></div>
-                  {company.contact_person}
-                </div>
-              )}
-              {company.email && (
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <Mail className="h-4 w-4 text-gray-400 flex-shrink-0" />
-                  {company.email}
-                </div>
-              )}
-              {company.phone && (
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <Phone className="h-4 w-4 text-gray-400 flex-shrink-0" />
-                  {company.phone}
-                </div>
-              )}
-              {(company.city || company.country) && (
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <MapPin className="h-4 w-4 text-gray-400 flex-shrink-0" />
-                  {[company.city, company.country].filter(Boolean).join(', ')}
-                </div>
-              )}
-              {company.notes && (
-                <div className="text-sm text-gray-500 line-clamp-2">
-                  {company.notes}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+                  </TableCell>
+                  <TableCell>{company.contact_person || '-'}</TableCell>
+                  <TableCell>
+                    {company.email ? (
+                      <div className="flex items-center gap-1">
+                        <Mail className="h-4 w-4 text-gray-400" />
+                        {company.email}
+                      </div>
+                    ) : '-'}
+                  </TableCell>
+                  <TableCell>
+                    {company.phone ? (
+                      <div className="flex items-center gap-1">
+                        <Phone className="h-4 w-4 text-gray-400" />
+                        {company.phone}
+                      </div>
+                    ) : '-'}
+                  </TableCell>
+                  <TableCell>
+                    {company.city ? (
+                      <div className="flex items-center gap-1">
+                        <MapPin className="h-4 w-4 text-gray-400" />
+                        {company.city}
+                      </div>
+                    ) : '-'}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex gap-1">
+                      <Button variant="ghost" size="sm">
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => deleteMutation.mutate(company.id)}
+                        disabled={deleteMutation.isPending}
+                      >
+                        <Trash2 className="h-4 w-4 text-red-500" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
 
       {filteredCompanies.length === 0 && (
         <div className="text-center py-12">
           <Building2 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-900 mb-2">Firma bulunamadı</h3>
           <p className="text-gray-600 mb-4">
-            {searchTerm ? 'Arama kriterlerinize uygun firma bulunamadı.' : 'Henüz firma eklenmemiş. Sağ üstten "Yeni Firma" butonuna tıklayarak yeni firma oluşturabilirsiniz.'}
+            {searchTerm ? 'Arama kriterlerinize uygun firma bulunamadı.' : 'Henüz firma eklenmemiş.'}
           </p>
           <Button onClick={() => setShowFormModal(true)}>
             <Plus className="h-4 w-4 mr-2" />

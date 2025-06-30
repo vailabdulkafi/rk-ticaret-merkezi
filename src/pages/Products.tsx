@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -7,11 +8,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Search, Edit, Trash2, Package, Settings } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, Package, Settings, List } from 'lucide-react';
 import { toast } from 'sonner';
 import ProductFormModal from '@/components/products/ProductFormModal';
 import ProductSubItemsModal from '@/components/products/ProductSubItemsModal';
 import ProductMatrixModal from '@/components/products/ProductMatrixModal';
+import ProductPropertiesModal from '@/components/products/ProductPropertiesModal';
 
 const Products = () => {
   const { user } = useAuth();
@@ -20,6 +22,7 @@ const Products = () => {
   const [showFormModal, setShowFormModal] = useState(false);
   const [showSubItemsModal, setShowSubItemsModal] = useState(false);
   const [showMatrixModal, setShowMatrixModal] = useState(false);
+  const [showPropertiesModal, setShowPropertiesModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
 
   const { data: products, isLoading } = useQuery({
@@ -71,6 +74,11 @@ const Products = () => {
   const handleMatrixClick = (product: any) => {
     setSelectedProduct(product);
     setShowMatrixModal(true);
+  };
+
+  const handlePropertiesClick = (product: any) => {
+    setSelectedProduct(product);
+    setShowPropertiesModal(true);
   };
 
   if (isLoading) {
@@ -160,6 +168,14 @@ const Products = () => {
                       <Button 
                         variant="ghost" 
                         size="sm"
+                        onClick={() => handlePropertiesClick(product)}
+                        title="Özellikler"
+                      >
+                        <List className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
                         onClick={() => handleMatrixClick(product)}
                         title="Matrisler"
                       >
@@ -221,6 +237,12 @@ const Products = () => {
       <ProductMatrixModal
         open={showMatrixModal}
         onOpenChange={setShowMatrixModal}
+        product={selectedProduct}
+      />
+
+      <ProductPropertiesModal
+        open={showPropertiesModal}
+        onOpenChange={setShowPropertiesModal}
         product={selectedProduct}
       />
     </div>

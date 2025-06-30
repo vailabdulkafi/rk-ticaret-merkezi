@@ -248,6 +248,57 @@ export type Database = {
         }
         Relationships: []
       }
+      exhibition_costs: {
+        Row: {
+          amount: number
+          category: string | null
+          cost_date: string | null
+          created_at: string | null
+          created_by: string | null
+          currency: string | null
+          description: string
+          exhibition_id: string | null
+          id: string
+        }
+        Insert: {
+          amount?: number
+          category?: string | null
+          cost_date?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          currency?: string | null
+          description: string
+          exhibition_id?: string | null
+          id?: string
+        }
+        Update: {
+          amount?: number
+          category?: string | null
+          cost_date?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          currency?: string | null
+          description?: string
+          exhibition_id?: string | null
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exhibition_costs_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exhibition_costs_exhibition_id_fkey"
+            columns: ["exhibition_id"]
+            isOneToOne: false
+            referencedRelation: "exhibitions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       exhibition_followups: {
         Row: {
           company_id: string | null
@@ -893,6 +944,72 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "quotation_responsibilities_quotation_id_fkey"
+            columns: ["quotation_id"]
+            isOneToOne: false
+            referencedRelation: "quotations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quotation_settings: {
+        Row: {
+          bank_info_id: string | null
+          company_info_id: string | null
+          created_at: string | null
+          delivery_method_id: string | null
+          id: string
+          payment_method_id: string | null
+          quotation_id: string | null
+        }
+        Insert: {
+          bank_info_id?: string | null
+          company_info_id?: string | null
+          created_at?: string | null
+          delivery_method_id?: string | null
+          id?: string
+          payment_method_id?: string | null
+          quotation_id?: string | null
+        }
+        Update: {
+          bank_info_id?: string | null
+          company_info_id?: string | null
+          created_at?: string | null
+          delivery_method_id?: string | null
+          id?: string
+          payment_method_id?: string | null
+          quotation_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quotation_settings_bank_info_id_fkey"
+            columns: ["bank_info_id"]
+            isOneToOne: false
+            referencedRelation: "bank_info"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotation_settings_company_info_id_fkey"
+            columns: ["company_info_id"]
+            isOneToOne: false
+            referencedRelation: "company_info"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotation_settings_delivery_method_id_fkey"
+            columns: ["delivery_method_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_methods"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotation_settings_payment_method_id_fkey"
+            columns: ["payment_method_id"]
+            isOneToOne: false
+            referencedRelation: "payment_methods"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotation_settings_quotation_id_fkey"
             columns: ["quotation_id"]
             isOneToOne: false
             referencedRelation: "quotations"

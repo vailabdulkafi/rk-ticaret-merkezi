@@ -3,11 +3,12 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Search, FileText, Edit, Trash2, Building2, Calendar, User, Globe } from 'lucide-react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Plus, Search, FileText, Edit, Trash2, Building2, RefreshCw, ShoppingCart, Download } from 'lucide-react';
 import { toast } from 'sonner';
 import QuotationFormModal from '@/components/quotations/QuotationFormModal';
 
@@ -30,19 +31,6 @@ const Quotations = () => {
           prepared_by_profile:profiles!prepared_by (
             first_name,
             last_name
-          ),
-          reviewed_by_profile:profiles!reviewed_by (
-            first_name,
-            last_name
-          ),
-          quotation_items (
-            id,
-            quantity,
-            unit_price,
-            total_price,
-            products (
-              name
-            )
           )
         `)
         .order('created_at', { ascending: false });
@@ -68,6 +56,67 @@ const Quotations = () => {
     },
     onError: (error) => {
       toast.error('Teklif silinirken hata oluştu: ' + error.message);
+    },
+  });
+
+  const convertToOrderMutation = useMutation({
+    mutationFn: async (quotationId: string) => {
+      const quotation = quotations?.find(q => q.id === quotationId);
+      if (!quotation) throw new Error('Teklif bulunamadı');
+
+      const orderNumber = `SIP-${Date.now()}`;
+      const { error } = await supabase
+        .from('orders')
+        .insert({
+          title: quotation.title,
+          order_number: orderNumber,
+          company_id: quotation.company_id,
+          total_amount: quotation.total_amount,
+          currency: quotation.currency,
+          quotation_id: quotationId,
+          created_by: user?.id || '',
+          status: 'pending'
+        });
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['orders'] });
+      toast.success('Teklif siparişe dönüştürüldü');
+    },
+    onError: (error) => {
+      toast.error('Sipariş oluşturulurken hata oluştu: ' + error.message);
+    },
+  });
+
+  const createRevisionMutation = useMutation({
+    mutationFn: async (quotationId: string) => {
+      const quotation = quotations?.find(q => q.id === quotationId);
+      if (!quotation) throw new Error('Teklif bulunamadı');
+
+      const newQuotationNumber = `${quotation.quotation_number}-R${(quotation.revision_number || 1) + 1}`;
+      const { error } = await supabase
+        .from('quotations')
+        .insert({
+          title: quotation.title + ' (Revizyon)',
+          quotation_number: newQuotationNumber,
+          company_id: quotation.company_id,
+          total_amount: quotation.total_amount,
+          currency: quotation.currency,
+          parent_quotation_id: quotationId,
+          revision_number: (quotation.revision_number || 1) + 1,
+          created_by: user?.id || '',
+          status: 'draft'
+        });
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['quotations'] });
+      toast.success('Teklif revizyonu oluşturuldu');
+    },
+    onError: (error) => {
+      toast.error('Revizyon oluşturulurken hata oluştu: ' + error.message);
     },
   });
 
@@ -107,27 +156,6 @@ const Quotations = () => {
     }
   };
 
-  const getLanguageText = (language: string) => {
-    switch (language) {
-      case 'TR':
-        return 'Türkçe';
-      case 'EN':
-        return 'İngilizce';
-      case 'PL':
-        return 'Lehçe';
-      case 'FR':
-        return 'Fransızca';
-      case 'RU':
-        return 'Rusça';
-      case 'DE':
-        return 'Almanca';
-      case 'AR':
-        return 'Arapça';
-      default:
-        return language;
-    }
-  };
-
   const formatPrice = (price: number, currency: string) => {
     return new Intl.NumberFormat('tr-TR', {
       style: 'currency',
@@ -144,11 +172,7 @@ const Quotations = () => {
       <div className="p-6 space-y-6">
         <div className="animate-pulse space-y-4">
           <div className="h-8 bg-gray-200 rounded w-1/4"></div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[...Array(6)].map((_, i) => (
-              <div key={i} className="h-64 bg-gray-200 rounded"></div>
-            ))}
-          </div>
+          <div className="h-48 bg-gray-200 rounded"></div>
         </div>
       </div>
     );
@@ -185,111 +209,110 @@ const Quotations = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredQuotations.map((quotation) => (
-          <Card key={quotation.id} className="hover:shadow-lg transition-shadow">
-            <CardHeader className="pb-3">
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-purple-50 rounded-lg">
-                    <FileText className="h-5 w-5 text-purple-600" />
-                  </div>
-                  <div>
-                    <CardTitle className="text-lg">{quotation.title}</CardTitle>
-                    <Badge className={`mt-1 ${getStatusColor(quotation.status)}`}>
+      <Card>
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Teklif No</TableHead>
+                <TableHead>Başlık</TableHead>
+                <TableHead>Firma</TableHead>
+                <TableHead>Durum</TableHead>
+                <TableHead>Tutar</TableHead>
+                <TableHead>Tarih</TableHead>
+                <TableHead>Rev.</TableHead>
+                <TableHead>İşlemler</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredQuotations.map((quotation) => (
+                <TableRow key={quotation.id}>
+                  <TableCell className="font-medium">
+                    <div className="flex items-center gap-2">
+                      <FileText className="h-4 w-4 text-gray-400" />
+                      {quotation.quotation_number}
+                    </div>
+                  </TableCell>
+                  <TableCell>{quotation.title}</TableCell>
+                  <TableCell>
+                    {quotation.companies ? (
+                      <div className="flex items-center gap-1">
+                        <Building2 className="h-4 w-4 text-gray-400" />
+                        {quotation.companies.name}
+                      </div>
+                    ) : '-'}
+                  </TableCell>
+                  <TableCell>
+                    <Badge className={getStatusColor(quotation.status)}>
                       {getStatusText(quotation.status)}
                     </Badge>
-                  </div>
-                </div>
-                <div className="flex gap-1">
-                  <Button variant="ghost" size="sm">
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
-                    onClick={() => deleteMutation.mutate(quotation.id)}
-                    disabled={deleteMutation.isPending}
-                  >
-                    <Trash2 className="h-4 w-4 text-red-500" />
-                  </Button>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="text-sm font-medium text-gray-900">
-                {quotation.quotation_number}
-              </div>
-              
-              {quotation.companies && (
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <Building2 className="h-4 w-4 text-gray-400 flex-shrink-0" />
-                  {quotation.companies.name}
-                </div>
-              )}
-
-              {quotation.quotation_date && (
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <Calendar className="h-4 w-4 text-gray-400 flex-shrink-0" />
-                  {formatDate(quotation.quotation_date)}
-                </div>
-              )}
-
-              {quotation.language && (
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <Globe className="h-4 w-4 text-gray-400 flex-shrink-0" />
-                  {getLanguageText(quotation.language)}
-                </div>
-              )}
-
-              {quotation.prepared_by_profile && (
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <User className="h-4 w-4 text-gray-400 flex-shrink-0" />
-                  {quotation.prepared_by_profile.first_name} {quotation.prepared_by_profile.last_name}
-                </div>
-              )}
-
-              <div className="flex justify-between items-center">
-                <div className="text-lg font-semibold text-gray-900">
-                  {formatPrice(quotation.total_amount, quotation.currency)}
-                </div>
-                {quotation.revision_number && quotation.revision_number > 1 && (
-                  <Badge variant="outline">
-                    Rev. {quotation.revision_number}
-                  </Badge>
-                )}
-              </div>
-
-              {quotation.quotation_items && quotation.quotation_items.length > 0 && (
-                <div className="text-sm text-gray-500">
-                  <span className="font-medium">Ürünler: </span>
-                  {quotation.quotation_items.length} kalem
-                </div>
-              )}
-
-              {quotation.valid_until && (
-                <div className="text-sm text-gray-500">
-                  <span className="font-medium">Geçerlilik: </span>
-                  {formatDate(quotation.valid_until)}
-                </div>
-              )}
-
-              {quotation.notes && (
-                <div className="text-sm text-gray-500 line-clamp-2">
-                  {quotation.notes}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+                  </TableCell>
+                  <TableCell className="font-medium">
+                    {formatPrice(quotation.total_amount, quotation.currency)}
+                  </TableCell>
+                  <TableCell>
+                    {quotation.quotation_date && formatDate(quotation.quotation_date)}
+                  </TableCell>
+                  <TableCell>
+                    {quotation.revision_number && quotation.revision_number > 1 && (
+                      <Badge variant="outline">
+                        Rev. {quotation.revision_number}
+                      </Badge>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex gap-1">
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => createRevisionMutation.mutate(quotation.id)}
+                        disabled={createRevisionMutation.isPending}
+                        title="Revize Et"
+                      >
+                        <RefreshCw className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => convertToOrderMutation.mutate(quotation.id)}
+                        disabled={convertToOrderMutation.isPending || quotation.status !== 'accepted'}
+                        title="Siparişe Dönüştür"
+                      >
+                        <ShoppingCart className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        title="PDF İndir"
+                      >
+                        <Download className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="sm">
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => deleteMutation.mutate(quotation.id)}
+                        disabled={deleteMutation.isPending}
+                      >
+                        <Trash2 className="h-4 w-4 text-red-500" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
 
       {filteredQuotations.length === 0 && (
         <div className="text-center py-12">
           <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-900 mb-2">Teklif bulunamadı</h3>
           <p className="text-gray-600 mb-4">
-            {searchTerm ? 'Arama kriterlerinize uygun teklif bulunamadı.' : 'Henüz teklif oluşturulmamış. Gelişmiş teklif sistemi ile profesyonel teklifler oluşturabilirsiniz.'}
+            {searchTerm ? 'Arama kriterlerinize uygun teklif bulunamadı.' : 'Henüz teklif oluşturulmamış.'}
           </p>
           <Button onClick={() => setShowFormModal(true)}>
             <Plus className="h-4 w-4 mr-2" />
