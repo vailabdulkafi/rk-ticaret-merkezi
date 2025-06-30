@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 interface ProductFormModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  product?: any;
 }
 
 interface ProductFormData {
@@ -30,7 +31,7 @@ interface ProductFormData {
   warranty_period: string;
 }
 
-const ProductFormModal = ({ open, onOpenChange }: ProductFormModalProps) => {
+const ProductFormModal = ({ open, onOpenChange, product }: ProductFormModalProps) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   
@@ -47,6 +48,38 @@ const ProductFormModal = ({ open, onOpenChange }: ProductFormModalProps) => {
     hs_code: '',
     warranty_period: ''
   });
+
+  useEffect(() => {
+    if (product) {
+      setFormData({
+        name: product.name || '',
+        description: product.description || '',
+        unit_price: product.unit_price?.toString() || '',
+        currency: product.currency || 'TRY',
+        unit: product.unit || 'adet',
+        stock_quantity: product.stock_quantity?.toString() || '0',
+        brand: product.brand || '',
+        model: product.model || '',
+        category_id: product.category_id || '',
+        hs_code: product.hs_code || '',
+        warranty_period: product.warranty_period || ''
+      });
+    } else {
+      setFormData({
+        name: '',
+        description: '',
+        unit_price: '',
+        currency: 'TRY',
+        unit: 'adet',
+        stock_quantity: '0',
+        brand: '',
+        model: '',
+        category_id: '',
+        hs_code: '',
+        warranty_period: ''
+      });
+    }
+  }, [product, open]);
 
   const { data: categories } = useQuery({
     queryKey: ['product-categories'],
@@ -89,22 +122,42 @@ const ProductFormModal = ({ open, onOpenChange }: ProductFormModalProps) => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
       toast.success('Ürün başarıyla eklendi');
       onOpenChange(false);
-      setFormData({
-        name: '',
-        description: '',
-        unit_price: '',
-        currency: 'TRY',
-        unit: 'adet',
-        stock_quantity: '0',
-        brand: '',
-        model: '',
-        category_id: '',
-        hs_code: '',
-        warranty_period: ''
-      });
     },
     onError: (error) => {
       toast.error('Ürün eklenirken hata oluştu: ' + error.message);
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async (data: ProductFormData) => {
+      if (!product?.id) throw new Error('Ürün ID bulunamadı');
+      
+      const { error } = await supabase
+        .from('products')
+        .update({
+          name: data.name,
+          description: data.description,
+          unit_price: parseFloat(data.unit_price),
+          currency: data.currency,
+          unit: data.unit,
+          stock_quantity: parseInt(data.stock_quantity),
+          brand: data.brand || null,
+          model: data.model || null,
+          category_id: data.category_id || null,
+          hs_code: data.hs_code || null,
+          warranty_period: data.warranty_period || null,
+        })
+        .eq('id', product.id);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      toast.success('Ürün başarıyla güncellendi');
+      onOpenChange(false);
+    },
+    onError: (error) => {
+      toast.error('Ürün güncellenirken hata oluştu: ' + error.message);
     },
   });
 
@@ -118,18 +171,25 @@ const ProductFormModal = ({ open, onOpenChange }: ProductFormModalProps) => {
       toast.error('Geçerli bir birim fiyat giriniz');
       return;
     }
-    createMutation.mutate(formData);
+    
+    if (product) {
+      updateMutation.mutate(formData);
+    } else {
+      createMutation.mutate(formData);
+    }
   };
 
   const handleInputChange = (field: keyof ProductFormData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  const isLoading = createMutation.isPending || updateMutation.isPending;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Yeni Ürün Ekle</DialogTitle>
+          <DialogTitle>{product ? 'Ürün Güncelle' : 'Yeni Ürün Ekle'}</DialogTitle>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -280,9 +340,9 @@ const ProductFormModal = ({ open, onOpenChange }: ProductFormModalProps) => {
             </Button>
             <Button
               type="submit"
-              disabled={createMutation.isPending}
+              disabled={isLoading}
             >
-              {createMutation.isPending ? 'Ekleniyor...' : 'Ürün Ekle'}
+              {isLoading ? (product ? 'Güncelleniyor...' : 'Ekleniyor...') : (product ? 'Ürün Güncelle' : 'Ürün Ekle')}
             </Button>
           </div>
         </form>

@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -14,11 +14,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 interface CompanyFormModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  company?: any;
 }
 
 interface CompanyFormData {
   name: string;
-  type: 'customer' | 'partner';
+  type: 'customer' | 'supplier' | 'both';
   contact_person: string;
   email: string;
   phone: string;
@@ -29,7 +30,7 @@ interface CompanyFormData {
   notes: string;
 }
 
-const CompanyFormModal = ({ open, onOpenChange }: CompanyFormModalProps) => {
+const CompanyFormModal = ({ open, onOpenChange, company }: CompanyFormModalProps) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   
@@ -45,6 +46,36 @@ const CompanyFormModal = ({ open, onOpenChange }: CompanyFormModalProps) => {
     tax_number: '',
     notes: ''
   });
+
+  useEffect(() => {
+    if (company) {
+      setFormData({
+        name: company.name || '',
+        type: company.type || 'customer',
+        contact_person: company.contact_person || '',
+        email: company.email || '',
+        phone: company.phone || '',
+        address: company.address || '',
+        city: company.city || '',
+        country: company.country || '',
+        tax_number: company.tax_number || '',
+        notes: company.notes || ''
+      });
+    } else {
+      setFormData({
+        name: '',
+        type: 'customer',
+        contact_person: '',
+        email: '',
+        phone: '',
+        address: '',
+        city: '',
+        country: '',
+        tax_number: '',
+        notes: ''
+      });
+    }
+  }, [company, open]);
 
   const createMutation = useMutation({
     mutationFn: async (data: CompanyFormData) => {
@@ -63,21 +94,30 @@ const CompanyFormModal = ({ open, onOpenChange }: CompanyFormModalProps) => {
       queryClient.invalidateQueries({ queryKey: ['companies'] });
       toast.success('Firma başarıyla eklendi');
       onOpenChange(false);
-      setFormData({
-        name: '',
-        type: 'customer',
-        contact_person: '',
-        email: '',
-        phone: '',
-        address: '',
-        city: '',
-        country: '',
-        tax_number: '',
-        notes: ''
-      });
     },
     onError: (error) => {
       toast.error('Firma eklenirken hata oluştu: ' + error.message);
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async (data: CompanyFormData) => {
+      if (!company?.id) throw new Error('Firma ID bulunamadı');
+      
+      const { error } = await supabase
+        .from('companies')
+        .update(data)
+        .eq('id', company.id);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['companies'] });
+      toast.success('Firma başarıyla güncellendi');
+      onOpenChange(false);
+    },
+    onError: (error) => {
+      toast.error('Firma güncellenirken hata oluştu: ' + error.message);
     },
   });
 
@@ -87,18 +127,25 @@ const CompanyFormModal = ({ open, onOpenChange }: CompanyFormModalProps) => {
       toast.error('Firma adı zorunludur');
       return;
     }
-    createMutation.mutate(formData);
+    
+    if (company) {
+      updateMutation.mutate(formData);
+    } else {
+      createMutation.mutate(formData);
+    }
   };
 
   const handleInputChange = (field: keyof CompanyFormData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  const isLoading = createMutation.isPending || updateMutation.isPending;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Yeni Firma Ekle</DialogTitle>
+          <DialogTitle>{company ? 'Firma Güncelle' : 'Yeni Firma Ekle'}</DialogTitle>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -115,13 +162,14 @@ const CompanyFormModal = ({ open, onOpenChange }: CompanyFormModalProps) => {
             
             <div>
               <Label htmlFor="type">Firma Tipi</Label>
-              <Select value={formData.type} onValueChange={(value: 'customer' | 'partner') => handleInputChange('type', value)}>
+              <Select value={formData.type} onValueChange={(value: 'customer' | 'supplier' | 'both') => handleInputChange('type', value)}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="customer">Müşteri</SelectItem>
-                  <SelectItem value="partner">Partner</SelectItem>
+                  <SelectItem value="supplier">Tedarikçi</SelectItem>
+                  <SelectItem value="both">Müşteri & Tedarikçi</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -217,9 +265,9 @@ const CompanyFormModal = ({ open, onOpenChange }: CompanyFormModalProps) => {
             </Button>
             <Button
               type="submit"
-              disabled={createMutation.isPending}
+              disabled={isLoading}
             >
-              {createMutation.isPending ? 'Ekleniyor...' : 'Firma Ekle'}
+              {isLoading ? (company ? 'Güncelleniyor...' : 'Ekleniyor...') : (company ? 'Firma Güncelle' : 'Firma Ekle')}
             </Button>
           </div>
         </form>
