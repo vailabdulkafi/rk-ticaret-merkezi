@@ -17,6 +17,7 @@ const Quotations = () => {
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
   const [showFormModal, setShowFormModal] = useState(false);
+  const [editingQuotation, setEditingQuotation] = useState<any>(null);
 
   const { data: quotations, isLoading } = useQuery({
     queryKey: ['quotations'],
@@ -105,6 +106,8 @@ const Quotations = () => {
           currency: quotation.currency,
           parent_quotation_id: quotationId,
           revision_number: (quotation.revision_number || 1) + 1,
+          prepared_by: quotation.prepared_by,
+          language: quotation.language,
           created_by: user?.id || '',
           status: 'draft'
         });
@@ -119,6 +122,21 @@ const Quotations = () => {
       toast.error('Revizyon oluşturulurken hata oluştu: ' + error.message);
     },
   });
+
+  const handleEditClick = (quotation: any) => {
+    setEditingQuotation(quotation);
+    setShowFormModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setShowFormModal(false);
+    setEditingQuotation(null);
+  };
+
+  const handlePdfDownload = (quotation: any) => {
+    // PDF download functionality will be implemented later
+    toast.info('PDF indirme özelliği yakında eklenecek');
+  };
 
   const filteredQuotations = quotations?.filter(quotation =>
     quotation.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -275,7 +293,7 @@ const Quotations = () => {
                         variant="ghost" 
                         size="sm"
                         onClick={() => convertToOrderMutation.mutate(quotation.id)}
-                        disabled={convertToOrderMutation.isPending || quotation.status !== 'accepted'}
+                        disabled={convertToOrderMutation.isPending}
                         title="Siparişe Dönüştür"
                       >
                         <ShoppingCart className="h-4 w-4" />
@@ -283,11 +301,16 @@ const Quotations = () => {
                       <Button 
                         variant="ghost" 
                         size="sm"
+                        onClick={() => handlePdfDownload(quotation)}
                         title="PDF İndir"
                       >
                         <Download className="h-4 w-4" />
                       </Button>
-                      <Button variant="ghost" size="sm">
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => handleEditClick(quotation)}
+                      >
                         <Edit className="h-4 w-4" />
                       </Button>
                       <Button 
@@ -323,7 +346,8 @@ const Quotations = () => {
 
       <QuotationFormModal 
         open={showFormModal}
-        onOpenChange={setShowFormModal}
+        onOpenChange={handleCloseModal}
+        quotation={editingQuotation}
       />
     </div>
   );

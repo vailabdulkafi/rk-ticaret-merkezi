@@ -17,6 +17,7 @@ const Companies = () => {
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
   const [showFormModal, setShowFormModal] = useState(false);
+  const [editingCompany, setEditingCompany] = useState<any>(null);
 
   const { data: companies, isLoading } = useQuery({
     queryKey: ['companies'],
@@ -55,6 +56,16 @@ const Companies = () => {
     company.contact_person?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     company.city?.toLowerCase().includes(searchTerm.toLowerCase())
   ) || [];
+
+  const handleEditClick = (company: any) => {
+    setEditingCompany(company);
+    setShowFormModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setShowFormModal(false);
+    setEditingCompany(null);
+  };
 
   const getTypeText = (type: string) => {
     switch (type) {
@@ -179,7 +190,11 @@ const Companies = () => {
                   </TableCell>
                   <TableCell>
                     <div className="flex gap-1">
-                      <Button variant="ghost" size="sm">
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => handleEditClick(company)}
+                      >
                         <Edit className="h-4 w-4" />
                       </Button>
                       <Button 
@@ -215,7 +230,8 @@ const Companies = () => {
 
       <CompanyFormModal 
         open={showFormModal}
-        onOpenChange={setShowFormModal}
+        onOpenChange={handleCloseModal}
+        company={editingCompany}
       />
     </div>
   );

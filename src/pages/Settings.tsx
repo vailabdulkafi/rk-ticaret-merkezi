@@ -20,8 +20,8 @@ import { Palette } from 'lucide-react';
 const Settings = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const [primaryColor, setPrimaryColor] = useState('#1f2937');
-  const [secondaryColor, setSecondaryColor] = useState('#6b7280');
+  const [primaryColor, setPrimaryColor] = useState('#2563eb');
+  const [secondaryColor, setSecondaryColor] = useState('#ffffff');
 
   const { data: themeSettings, isLoading } = useQuery({
     queryKey: ['theme-settings'],
@@ -53,42 +53,34 @@ const Settings = () => {
     }
   }, [themeSettings]);
 
+  // Apply theme colors to CSS variables
+  useEffect(() => {
+    const root = document.documentElement;
+    root.style.setProperty('--primary', primaryColor);
+    root.style.setProperty('--secondary', secondaryColor);
+  }, [primaryColor, secondaryColor]);
+
   const updateThemeMutation = useMutation({
     mutationFn: async ({ name, value }: { name: string; value: string }) => {
-      // Önce mevcut kaydı kontrol et
-      const { data: existing } = await supabase
+      // Delete existing settings with the same name to avoid conflicts
+      await supabase
         .from('company_settings')
-        .select('id')
+        .delete()
         .eq('setting_type', 'theme')
-        .eq('name', name)
-        .single();
+        .eq('name', name);
 
-      if (existing) {
-        // Güncelle
-        const { error } = await supabase
-          .from('company_settings')
-          .update({
-            value: value,
-            language: 'TR',
-            created_by: user?.id
-          })
-          .eq('id', existing.id);
-        
-        if (error) throw error;
-      } else {
-        // Yeni kayıt ekle
-        const { error } = await supabase
-          .from('company_settings')
-          .insert({
-            setting_type: 'theme',
-            name,
-            value: value,
-            language: 'TR',
-            created_by: user?.id
-          });
-        
-        if (error) throw error;
-      }
+      // Insert new setting
+      const { error } = await supabase
+        .from('company_settings')
+        .insert({
+          setting_type: 'theme',
+          name,
+          value: value,
+          language: 'TR',
+          created_by: user?.id
+        });
+      
+      if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['theme-settings'] });
@@ -103,6 +95,11 @@ const Settings = () => {
     try {
       await updateThemeMutation.mutateAsync({ name: 'primary_color', value: primaryColor });
       await updateThemeMutation.mutateAsync({ name: 'secondary_color', value: secondaryColor });
+      
+      // Apply the colors immediately to the CSS
+      const root = document.documentElement;
+      root.style.setProperty('--primary', primaryColor);
+      root.style.setProperty('--secondary', secondaryColor);
     } catch (error) {
       console.error('Tema kaydetme hatası:', error);
     }
@@ -171,7 +168,7 @@ const Settings = () => {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="primary-color">Ana Renk</Label>
+                  <Label htmlFor="primary-color">Ana Renk (Mavi)</Label>
                   <div className="flex items-center gap-3">
                     <Input
                       id="primary-color"
@@ -190,7 +187,7 @@ const Settings = () => {
                 </div>
                 
                 <div>
-                  <Label htmlFor="secondary-color">İkinci Renk</Label>
+                  <Label htmlFor="secondary-color">İkinci Renk (Beyaz)</Label>
                   <div className="flex items-center gap-3">
                     <Input
                       id="secondary-color"

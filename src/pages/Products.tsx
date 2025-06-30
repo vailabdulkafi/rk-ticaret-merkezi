@@ -24,6 +24,7 @@ const Products = () => {
   const [showMatrixModal, setShowMatrixModal] = useState(false);
   const [showPropertiesModal, setShowPropertiesModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
+  const [editingProduct, setEditingProduct] = useState<any>(null);
 
   const { data: products, isLoading } = useQuery({
     queryKey: ['products'],
@@ -65,6 +66,16 @@ const Products = () => {
     product.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     product.brand?.toLowerCase().includes(searchTerm.toLowerCase())
   ) || [];
+
+  const handleEditClick = (product: any) => {
+    setEditingProduct(product);
+    setShowFormModal(true);
+  };
+
+  const handleCloseFormModal = () => {
+    setShowFormModal(false);
+    setEditingProduct(null);
+  };
 
   const handleSubItemsClick = (product: any) => {
     setSelectedProduct(product);
@@ -189,7 +200,11 @@ const Products = () => {
                       >
                         <Settings className="h-4 w-4" />
                       </Button>
-                      <Button variant="ghost" size="sm">
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => handleEditClick(product)}
+                      >
                         <Edit className="h-4 w-4" />
                       </Button>
                       <Button 
@@ -225,7 +240,8 @@ const Products = () => {
 
       <ProductFormModal 
         open={showFormModal}
-        onOpenChange={setShowFormModal}
+        onOpenChange={handleCloseFormModal}
+        product={editingProduct}
       />
       
       <ProductSubItemsModal
