@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Search, FileText, Edit, Trash2, Building2 } from 'lucide-react';
+import { Plus, Search, FileText, Edit, Trash2, Building2, Calendar, User, Globe } from 'lucide-react';
 import { toast } from 'sonner';
 import QuotationFormModal from '@/components/quotations/QuotationFormModal';
 
@@ -26,6 +26,23 @@ const Quotations = () => {
           *,
           companies (
             name
+          ),
+          prepared_by_profile:profiles!prepared_by (
+            first_name,
+            last_name
+          ),
+          reviewed_by_profile:profiles!reviewed_by (
+            first_name,
+            last_name
+          ),
+          quotation_items (
+            id,
+            quantity,
+            unit_price,
+            total_price,
+            products (
+              name
+            )
           )
         `)
         .order('created_at', { ascending: false });
@@ -90,11 +107,36 @@ const Quotations = () => {
     }
   };
 
+  const getLanguageText = (language: string) => {
+    switch (language) {
+      case 'TR':
+        return 'Türkçe';
+      case 'EN':
+        return 'İngilizce';
+      case 'PL':
+        return 'Lehçe';
+      case 'FR':
+        return 'Fransızca';
+      case 'RU':
+        return 'Rusça';
+      case 'DE':
+        return 'Almanca';
+      case 'AR':
+        return 'Arapça';
+      default:
+        return language;
+    }
+  };
+
   const formatPrice = (price: number, currency: string) => {
     return new Intl.NumberFormat('tr-TR', {
       style: 'currency',
       currency: currency,
     }).format(price);
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('tr-TR');
   };
 
   if (isLoading) {
@@ -104,7 +146,7 @@ const Quotations = () => {
           <div className="h-8 bg-gray-200 rounded w-1/4"></div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {[...Array(6)].map((_, i) => (
-              <div key={i} className="h-48 bg-gray-200 rounded"></div>
+              <div key={i} className="h-64 bg-gray-200 rounded"></div>
             ))}
           </div>
         </div>
@@ -117,7 +159,7 @@ const Quotations = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Teklifler</h1>
-          <p className="text-gray-600">Müşteri tekliflerinizi yönetin</p>
+          <p className="text-gray-600">Gelişmiş teklif sistemi ile müşteri tekliflerinizi yönetin</p>
         </div>
         <Button 
           className="flex items-center gap-2"
@@ -186,16 +228,49 @@ const Quotations = () => {
                 </div>
               )}
 
+              {quotation.quotation_date && (
+                <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <Calendar className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                  {formatDate(quotation.quotation_date)}
+                </div>
+              )}
+
+              {quotation.language && (
+                <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <Globe className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                  {getLanguageText(quotation.language)}
+                </div>
+              )}
+
+              {quotation.prepared_by_profile && (
+                <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <User className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                  {quotation.prepared_by_profile.first_name} {quotation.prepared_by_profile.last_name}
+                </div>
+              )}
+
               <div className="flex justify-between items-center">
                 <div className="text-lg font-semibold text-gray-900">
                   {formatPrice(quotation.total_amount, quotation.currency)}
                 </div>
+                {quotation.revision_number && quotation.revision_number > 1 && (
+                  <Badge variant="outline">
+                    Rev. {quotation.revision_number}
+                  </Badge>
+                )}
               </div>
+
+              {quotation.quotation_items && quotation.quotation_items.length > 0 && (
+                <div className="text-sm text-gray-500">
+                  <span className="font-medium">Ürünler: </span>
+                  {quotation.quotation_items.length} kalem
+                </div>
+              )}
 
               {quotation.valid_until && (
                 <div className="text-sm text-gray-500">
                   <span className="font-medium">Geçerlilik: </span>
-                  {new Date(quotation.valid_until).toLocaleDateString('tr-TR')}
+                  {formatDate(quotation.valid_until)}
                 </div>
               )}
 
@@ -214,7 +289,7 @@ const Quotations = () => {
           <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-900 mb-2">Teklif bulunamadı</h3>
           <p className="text-gray-600 mb-4">
-            {searchTerm ? 'Arama kriterlerinize uygun teklif bulunamadı.' : 'Henüz teklif oluşturulmamış. Sağ üstten "Yeni Teklif" butonuna tıklayarak yeni teklif oluşturabilirsiniz.'}
+            {searchTerm ? 'Arama kriterlerinize uygun teklif bulunamadı.' : 'Henüz teklif oluşturulmamış. Gelişmiş teklif sistemi ile profesyonel teklifler oluşturabilirsiniz.'}
           </p>
           <Button onClick={() => setShowFormModal(true)}>
             <Plus className="h-4 w-4 mr-2" />

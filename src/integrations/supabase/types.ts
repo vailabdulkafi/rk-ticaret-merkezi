@@ -60,6 +60,71 @@ export type Database = {
         }
         Relationships: []
       }
+      company_settings: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          id: string
+          language: Database["public"]["Enums"]["quotation_language"] | null
+          name: string
+          setting_type: string
+          value: Json
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          language?: Database["public"]["Enums"]["quotation_language"] | null
+          name: string
+          setting_type: string
+          value: Json
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          language?: Database["public"]["Enums"]["quotation_language"] | null
+          name?: string
+          setting_type?: string
+          value?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_settings_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dictionary: {
+        Row: {
+          category: string | null
+          created_at: string | null
+          id: string
+          key_name: string
+          language: Database["public"]["Enums"]["quotation_language"]
+          value: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string | null
+          id?: string
+          key_name: string
+          language: Database["public"]["Enums"]["quotation_language"]
+          value: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string | null
+          id?: string
+          key_name?: string
+          language?: Database["public"]["Enums"]["quotation_language"]
+          value?: string
+        }
+        Relationships: []
+      }
       exhibition_followups: {
         Row: {
           company_id: string | null
@@ -152,6 +217,47 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      matrix_values: {
+        Row: {
+          created_at: string | null
+          id: string
+          matrix_id: string | null
+          param_1_value: string | null
+          param_2_value: string | null
+          param_3_value: string | null
+          param_4_value: string | null
+          price: number
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          matrix_id?: string | null
+          param_1_value?: string | null
+          param_2_value?: string | null
+          param_3_value?: string | null
+          param_4_value?: string | null
+          price: number
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          matrix_id?: string | null
+          param_1_value?: string | null
+          param_2_value?: string | null
+          param_3_value?: string | null
+          param_4_value?: string | null
+          price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "matrix_values_matrix_id_fkey"
+            columns: ["matrix_id"]
+            isOneToOne: false
+            referencedRelation: "product_matrices"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       order_items: {
         Row: {
@@ -282,45 +388,203 @@ export type Database = {
         }
         Relationships: []
       }
+      product_matrices: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          id: string
+          name: string
+          parameter_1_name: string | null
+          parameter_2_name: string | null
+          parameter_3_name: string | null
+          parameter_4_name: string | null
+          parameter_count: number | null
+          product_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          name: string
+          parameter_1_name?: string | null
+          parameter_2_name?: string | null
+          parameter_3_name?: string | null
+          parameter_4_name?: string | null
+          parameter_count?: number | null
+          product_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          name?: string
+          parameter_1_name?: string | null
+          parameter_2_name?: string | null
+          parameter_3_name?: string | null
+          parameter_4_name?: string | null
+          parameter_count?: number | null
+          product_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_matrices_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_matrices_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_properties: {
+        Row: {
+          conditional_display: string | null
+          created_at: string | null
+          display_order: number | null
+          id: string
+          language: Database["public"]["Enums"]["quotation_language"] | null
+          product_id: string | null
+          property_name: string
+          property_value: string
+          show_in_quotation: boolean | null
+        }
+        Insert: {
+          conditional_display?: string | null
+          created_at?: string | null
+          display_order?: number | null
+          id?: string
+          language?: Database["public"]["Enums"]["quotation_language"] | null
+          product_id?: string | null
+          property_name: string
+          property_value: string
+          show_in_quotation?: boolean | null
+        }
+        Update: {
+          conditional_display?: string | null
+          created_at?: string | null
+          display_order?: number | null
+          id?: string
+          language?: Database["public"]["Enums"]["quotation_language"] | null
+          product_id?: string | null
+          property_name?: string
+          property_value?: string
+          show_in_quotation?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_properties_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_sub_items: {
+        Row: {
+          created_at: string | null
+          id: string
+          parent_product_id: string | null
+          quantity: number | null
+          sub_product_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          parent_product_id?: string | null
+          quantity?: number | null
+          sub_product_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          parent_product_id?: string | null
+          quantity?: number | null
+          sub_product_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_sub_items_parent_product_id_fkey"
+            columns: ["parent_product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_sub_items_sub_product_id_fkey"
+            columns: ["sub_product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
+          brand: string | null
           category_id: string | null
           created_at: string
           created_by: string
           currency: string
           description: string | null
+          hs_code: string | null
           id: string
+          ignore_sub_item_pricing: boolean | null
+          image_url: string | null
+          model: string | null
           name: string
           stock_quantity: number | null
+          technical_specs: Json | null
           unit: string | null
           unit_price: number
           updated_at: string
+          warranty_period: string | null
         }
         Insert: {
+          brand?: string | null
           category_id?: string | null
           created_at?: string
           created_by: string
           currency?: string
           description?: string | null
+          hs_code?: string | null
           id?: string
+          ignore_sub_item_pricing?: boolean | null
+          image_url?: string | null
+          model?: string | null
           name: string
           stock_quantity?: number | null
+          technical_specs?: Json | null
           unit?: string | null
           unit_price: number
           updated_at?: string
+          warranty_period?: string | null
         }
         Update: {
+          brand?: string | null
           category_id?: string | null
           created_at?: string
           created_by?: string
           currency?: string
           description?: string | null
+          hs_code?: string | null
           id?: string
+          ignore_sub_item_pricing?: boolean | null
+          image_url?: string | null
+          model?: string | null
           name?: string
           stock_quantity?: number | null
+          technical_specs?: Json | null
           unit?: string | null
           unit_price?: number
           updated_at?: string
+          warranty_period?: string | null
         }
         Relationships: [
           {
@@ -365,35 +629,54 @@ export type Database = {
       quotation_items: {
         Row: {
           created_at: string
+          custom_properties: Json | null
           discount_percentage: number | null
           id: string
+          is_sub_item: boolean | null
+          parent_item_id: string | null
           product_id: string
           quantity: number
           quotation_id: string
+          selected_matrix_id: string | null
           total_price: number
           unit_price: number
         }
         Insert: {
           created_at?: string
+          custom_properties?: Json | null
           discount_percentage?: number | null
           id?: string
+          is_sub_item?: boolean | null
+          parent_item_id?: string | null
           product_id: string
           quantity: number
           quotation_id: string
+          selected_matrix_id?: string | null
           total_price: number
           unit_price: number
         }
         Update: {
           created_at?: string
+          custom_properties?: Json | null
           discount_percentage?: number | null
           id?: string
+          is_sub_item?: boolean | null
+          parent_item_id?: string | null
           product_id?: string
           quantity?: number
           quotation_id?: string
+          selected_matrix_id?: string | null
           total_price?: number
           unit_price?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "quotation_items_parent_item_id_fkey"
+            columns: ["parent_item_id"]
+            isOneToOne: false
+            referencedRelation: "quotation_items"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "quotation_items_product_id_fkey"
             columns: ["product_id"]
@@ -408,6 +691,51 @@ export type Database = {
             referencedRelation: "quotations"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "quotation_items_selected_matrix_id_fkey"
+            columns: ["selected_matrix_id"]
+            isOneToOne: false
+            referencedRelation: "product_matrices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quotation_responsibilities: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          language: Database["public"]["Enums"]["quotation_language"] | null
+          quotation_id: string | null
+          responsibility_type: string
+          responsible_party: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          language?: Database["public"]["Enums"]["quotation_language"] | null
+          quotation_id?: string | null
+          responsibility_type: string
+          responsible_party: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          language?: Database["public"]["Enums"]["quotation_language"] | null
+          quotation_id?: string | null
+          responsibility_type?: string
+          responsible_party?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quotation_responsibilities_quotation_id_fkey"
+            columns: ["quotation_id"]
+            isOneToOne: false
+            referencedRelation: "quotations"
+            referencedColumns: ["id"]
+          },
         ]
       }
       quotations: {
@@ -417,8 +745,14 @@ export type Database = {
           created_by: string
           currency: string
           id: string
+          language: Database["public"]["Enums"]["quotation_language"] | null
           notes: string | null
+          parent_quotation_id: string | null
+          prepared_by: string | null
+          quotation_date: string | null
           quotation_number: string
+          reviewed_by: string | null
+          revision_number: number | null
           status: string
           title: string
           total_amount: number
@@ -431,8 +765,14 @@ export type Database = {
           created_by: string
           currency?: string
           id?: string
+          language?: Database["public"]["Enums"]["quotation_language"] | null
           notes?: string | null
+          parent_quotation_id?: string | null
+          prepared_by?: string | null
+          quotation_date?: string | null
           quotation_number: string
+          reviewed_by?: string | null
+          revision_number?: number | null
           status?: string
           title: string
           total_amount?: number
@@ -445,8 +785,14 @@ export type Database = {
           created_by?: string
           currency?: string
           id?: string
+          language?: Database["public"]["Enums"]["quotation_language"] | null
           notes?: string | null
+          parent_quotation_id?: string | null
+          prepared_by?: string | null
+          quotation_date?: string | null
           quotation_number?: string
+          reviewed_by?: string | null
+          revision_number?: number | null
           status?: string
           title?: string
           total_amount?: number
@@ -461,6 +807,27 @@ export type Database = {
             referencedRelation: "companies"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "quotations_parent_quotation_id_fkey"
+            columns: ["parent_quotation_id"]
+            isOneToOne: false
+            referencedRelation: "quotations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotations_prepared_by_fkey"
+            columns: ["prepared_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotations_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
     }
@@ -471,7 +838,8 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      currency_type: "EUR" | "USD" | "TRY"
+      quotation_language: "TR" | "EN" | "PL" | "FR" | "RU" | "DE" | "AR"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -586,6 +954,9 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      currency_type: ["EUR", "USD", "TRY"],
+      quotation_language: ["TR", "EN", "PL", "FR", "RU", "DE", "AR"],
+    },
   },
 } as const
