@@ -15,7 +15,8 @@ import {
   Menu,
   X,
   User,
-  UserCheck
+  UserCheck,
+  CheckSquare
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -51,6 +52,7 @@ const Layout = () => {
     { name: 'Teklifler', href: '/quotations', icon: FileText },
     { name: 'Siparişler', href: '/orders', icon: ShoppingCart },
     { name: 'Fuarlar', href: '/exhibitions', icon: Calendar },
+    { name: 'Görevler', href: '/tasks', icon: CheckSquare },
     { name: 'Ayarlar', href: '/settings', icon: Settings },
   ];
 

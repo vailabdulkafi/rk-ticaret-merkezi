@@ -14,6 +14,7 @@ import Quotations from "@/pages/Quotations";
 import Orders from "@/pages/Orders";
 import Exhibitions from "@/pages/Exhibitions";
 import Settings from "@/pages/Settings";
+import Tasks from "@/pages/Tasks";
 import Auth from "@/pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -36,6 +37,7 @@ const App = () => (
               <Route path="quotations" element={<Quotations />} />
               <Route path="orders" element={<Orders />} />
               <Route path="exhibitions" element={<Exhibitions />} />
+              <Route path="tasks" element={<Tasks />} />
               <Route path="settings" element={<Settings />} />
             </Route>
             <Route path="*" element={<NotFound />} />
