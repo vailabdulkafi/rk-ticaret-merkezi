@@ -335,7 +335,7 @@ export type Database = {
           phone: string | null
           position: string | null
           updated_at: string
-          user_id: string | null
+          user_id: string
         }
         Insert: {
           address?: string | null
@@ -349,7 +349,7 @@ export type Database = {
           phone?: string | null
           position?: string | null
           updated_at?: string
-          user_id?: string | null
+          user_id: string
         }
         Update: {
           address?: string | null
@@ -363,9 +363,17 @@ export type Database = {
           phone?: string | null
           position?: string | null
           updated_at?: string
-          user_id?: string | null
+          user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "employees_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       exhibition_costs: {
         Row: {

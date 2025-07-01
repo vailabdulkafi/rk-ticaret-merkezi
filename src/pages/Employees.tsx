@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -24,12 +23,12 @@ const Employees = () => {
         .from('employees')
         .select(`
           *,
-          profiles!inner(first_name, last_name, email),
+          profiles!employees_user_id_fkey(first_name, last_name, email),
           employee_roles(role, is_active),
           manager:employee_hierarchy!employee_hierarchy_employee_id_fkey(
             manager:employees!employee_hierarchy_manager_id_fkey(
               id,
-              profiles!inner(first_name, last_name)
+              profiles!employees_user_id_fkey(first_name, last_name)
             )
           )
         `)
