@@ -82,7 +82,7 @@ export function EmployeeFormModal({ isOpen, onClose, employee, onSuccess }: Empl
         .from('employees')
         .select(`
           id,
-          profiles!employees_user_id_fkey(first_name, last_name),
+          profiles!inner(first_name, last_name),
           employee_roles!inner(role)
         `)
         .eq('is_active', true)

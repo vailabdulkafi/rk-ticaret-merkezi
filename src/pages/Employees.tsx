@@ -24,12 +24,12 @@ const Employees = () => {
         .from('employees')
         .select(`
           *,
-          profiles!employees_user_id_fkey(first_name, last_name, email),
+          profiles!inner(first_name, last_name, email),
           employee_roles(role, is_active),
           manager:employee_hierarchy!employee_hierarchy_employee_id_fkey(
             manager:employees!employee_hierarchy_manager_id_fkey(
               id,
-              profiles!employees_user_id_fkey(first_name, last_name)
+              profiles!inner(first_name, last_name)
             )
           )
         `)
