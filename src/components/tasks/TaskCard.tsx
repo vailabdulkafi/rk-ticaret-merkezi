@@ -10,8 +10,25 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
+interface Task {
+  id: string;
+  title: string;
+  description: string | null;
+  status: string;
+  priority: string;
+  assigned_to: string | null;
+  created_by: string;
+  due_date: string | null;
+  created_at: string;
+  updated_at: string;
+  assigned_to_profile?: {
+    first_name: string | null;
+    last_name: string | null;
+  };
+}
+
 interface TaskCardProps {
-  task: any;
+  task: Task;
   onTaskClick: () => void;
   onStatusChange: (taskId: string, newStatus: string) => void;
   statuses: Array<{ key: string; label: string; color: string }>;
@@ -77,10 +94,10 @@ export function TaskCard({ task, onTaskClick, onStatusChange, statuses }: TaskCa
             </Badge>
           </div>
           
-          {task.assigned_to && (
+          {task.assigned_to_profile && (
             <div className="flex items-center text-xs text-gray-500">
               <User className="mr-1 h-3 w-3" />
-              <span>{task.assigned_to.first_name} {task.assigned_to.last_name}</span>
+              <span>{task.assigned_to_profile.first_name} {task.assigned_to_profile.last_name}</span>
             </div>
           )}
           

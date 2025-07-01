@@ -4,18 +4,35 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
-import { Plus, Calendar, User, Clock } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { TaskFormModal } from '@/components/tasks/TaskFormModal';
 import { TaskCard } from '@/components/tasks/TaskCard';
 import { toast } from 'sonner';
 
+interface Task {
+  id: string;
+  title: string;
+  description: string | null;
+  status: string;
+  priority: string;
+  assigned_to: string | null;
+  created_by: string;
+  due_date: string | null;
+  created_at: string;
+  updated_at: string;
+  assigned_to_profile?: {
+    first_name: string | null;
+    last_name: string | null;
+  };
+}
+
 const Tasks = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [selectedTask, setSelectedTask] = useState<any>(null);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
   const { data: tasks, isLoading } = useQuery({
     queryKey: ['tasks'],
@@ -24,13 +41,12 @@ const Tasks = () => {
         .from('tasks')
         .select(`
           *,
-          assigned_to:profiles!tasks_assigned_to_fkey(first_name, last_name),
-          created_by_profile:profiles!tasks_created_by_fkey(first_name, last_name)
+          assigned_to_profile:profiles!tasks_assigned_to_fkey(first_name, last_name)
         `)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data;
+      return data as Task[];
     }
   });
 
@@ -52,7 +68,7 @@ const Tasks = () => {
     }
   });
 
-  const handleTaskClick = (task: any) => {
+  const handleTaskClick = (task: Task) => {
     setSelectedTask(task);
     setIsCreateModalOpen(true);
   };

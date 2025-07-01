@@ -22,10 +22,23 @@ import {
 } from '@/components/ui/select';
 import { toast } from 'sonner';
 
+interface Task {
+  id: string;
+  title: string;
+  description: string | null;
+  status: string;
+  priority: string;
+  assigned_to: string | null;
+  created_by: string;
+  due_date: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 interface TaskFormModalProps {
   isOpen: boolean;
   onClose: () => void;
-  task?: any;
+  task?: Task | null;
   onSuccess: () => void;
 }
 
