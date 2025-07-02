@@ -3,8 +3,9 @@ import { useAuth } from '@/hooks/useAuth';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
 import DashboardStats from '@/components/dashboard/DashboardStats';
-import QuickActions from '@/components/dashboard/QuickActions';
+import Agenda from '@/components/dashboard/Agenda';
 import RecentActivity from '@/components/dashboard/RecentActivity';
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -35,10 +36,15 @@ const Dashboard = () => {
 
       <DashboardStats stats={stats} />
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
-        <RecentActivity />
-        <QuickActions />
-      </div>
+      <ResizablePanelGroup direction="horizontal" className="min-h-[400px]">
+        <ResizablePanel defaultSize={50} minSize={30}>
+          <RecentActivity />
+        </ResizablePanel>
+        <ResizableHandle withHandle />
+        <ResizablePanel defaultSize={50} minSize={30}>
+          <Agenda />
+        </ResizablePanel>
+      </ResizablePanelGroup>
     </div>
   );
 };

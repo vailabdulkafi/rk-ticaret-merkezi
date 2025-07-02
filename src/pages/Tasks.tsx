@@ -3,164 +3,279 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { TaskFormModal } from '@/components/tasks/TaskFormModal';
-import { TaskCard } from '@/components/tasks/TaskCard';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Plus, Search, Filter } from 'lucide-react';
 import { toast } from 'sonner';
-
-interface Task {
-  id: string;
-  title: string;
-  description: string | null;
-  status: string;
-  priority: string;
-  assigned_to: string | null;
-  created_by: string;
-  due_date: string | null;
-  created_at: string;
-  updated_at: string;
-  assigned_to_profile?: {
-    first_name: string | null;
-    last_name: string | null;
-  };
-}
+import TaskCard from '@/components/tasks/TaskCard';
+import TaskFormModal from '@/components/tasks/TaskFormModal';
 
 const Tasks = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [priorityFilter, setPriorityFilter] = useState<string>('all');
+  const [showFormModal, setShowFormModal] = useState(false);
+  const [selectedTask, setSelectedTask] = useState<any>(null);
 
-  const { data: tasks, isLoading } = useQuery({
+  const { data: tasks, isLoading, error } = useQuery({
     queryKey: ['tasks'],
     queryFn: async () => {
+      console.log('Görevler yükleniyor...');
       const { data, error } = await supabase
         .from('tasks')
         .select(`
           *,
-          assigned_to_profile:profiles!tasks_assigned_to_fkey(first_name, last_name)
+          assigned_user:assigned_to(first_name, last_name, email),
+          created_user:created_by(first_name, last_name, email)
         `)
         .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      return data as Task[];
-    }
+      
+      if (error) {
+        console.error('Görev yükleme hatası:', error);
+        throw error;
+      }
+      console.log('Yüklenen görevler:', data);
+      return data;
+    },
+    enabled: !!user,
   });
 
   const updateTaskMutation = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
+      console.log('Görev durumu güncelleniyor:', id, status);
       const { error } = await supabase
         .from('tasks')
         .update({ status, updated_at: new Date().toISOString() })
         .eq('id', id);
-
+      
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       toast.success('Görev durumu güncellendi');
     },
-    onError: () => {
-      toast.error('Görev güncellenirken hata oluştu');
-    }
+    onError: (error) => {
+      console.error('Görev güncelleme hatası:', error);
+      toast.error('Görev güncellenirken hata oluştu: ' + error.message);
+    },
   });
 
-  const handleTaskClick = (task: Task) => {
+  const deleteTaskMutation = useMutation({
+    mutationFn: async (id: string) => {
+      console.log('Görev siliniyor:', id);
+      const { error } = await supabase
+        .from('tasks')
+        .delete()
+        .eq('id', id);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      toast.success('Görev başarıyla silindi');
+    },
+    onError: (error) => {
+      console.error('Görev silme hatası:', error);
+      toast.error('Görev silinirken hata oluştu: ' + error.message);
+    },
+  });
+
+  const filteredTasks = tasks?.filter(task => {
+    const matchesSearch = task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         task.description?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === 'all' || task.status === statusFilter;
+    const matchesPriority = priorityFilter === 'all' || task.priority === priorityFilter;
+    
+    return matchesSearch && matchesStatus && matchesPriority;
+  }) || [];
+
+  const tasksByStatus = {
+    todo: filteredTasks.filter(task => task.status === 'todo'),
+    in_progress: filteredTasks.filter(task => task.status === 'in_progress'),
+    done: filteredTasks.filter(task => task.status === 'done')
+  };
+
+  const handleAddTask = () => {
+    console.log('Yeni görev ekleme modalı açılıyor');
+    setSelectedTask(null);
+    setShowFormModal(true);
+  };
+
+  const handleEditTask = (task: any) => {
+    console.log('Görev düzenleme modalı açılıyor:', task);
     setSelectedTask(task);
-    setIsCreateModalOpen(true);
+    setShowFormModal(true);
   };
 
   const handleStatusChange = (taskId: string, newStatus: string) => {
+    console.log('Görev durumu değiştiriliyor:', taskId, newStatus);
     updateTaskMutation.mutate({ id: taskId, status: newStatus });
   };
 
-  const getTasksByStatus = (status: string) => {
-    return tasks?.filter(task => task.status === status) || [];
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'todo': return 'secondary';
-      case 'in_progress': return 'default';
-      case 'review': return 'outline';
-      case 'done': return 'destructive';
-      default: return 'secondary';
+  const handleDeleteTask = (taskId: string) => {
+    console.log('Görev silme onayı:', taskId);
+    if (window.confirm('Bu görevi silmek istediğinizden emin misiniz?')) {
+      deleteTaskMutation.mutate(taskId);
     }
   };
 
-  const statuses = [
-    { key: 'todo', label: 'Yapılacak', color: 'bg-gray-100' },
-    { key: 'in_progress', label: 'Devam Ediyor', color: 'bg-blue-100' },
-    { key: 'review', label: 'İnceleme', color: 'bg-yellow-100' },
-    { key: 'done', label: 'Tamamlandı', color: 'bg-green-100' }
-  ];
+  if (error) {
+    console.error('Görevler yüklenirken hata:', error);
+    return (
+      <div className="p-6">
+        <div className="text-center text-red-600">
+          <p>Görevler yüklenirken hata oluştu: {error.message}</p>
+        </div>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
-      <div className="container mx-auto p-6">
-        <div className="flex items-center justify-center h-64">
-          <div className="text-center">Yükleniyor...</div>
+      <div className="p-6 space-y-6">
+        <div className="animate-pulse space-y-4">
+          <div className="h-8 bg-gray-200 rounded w-1/4"></div>
+          <div className="h-48 bg-gray-200 rounded"></div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto p-6">
-      <div className="flex justify-between items-center mb-6">
+    <div className="p-6 space-y-6">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Görevler</h1>
-          <p className="text-gray-600">Kanban tahtasında görevlerinizi yönetin</p>
+          <h1 className="text-2xl font-bold text-gray-900">Görevler</h1>
+          <p className="text-gray-600">Görevlerinizi organize edin ve takip edin</p>
         </div>
-        <Button onClick={() => setIsCreateModalOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" />
+        <Button 
+          className="flex items-center gap-2"
+          onClick={handleAddTask}
+        >
+          <Plus className="h-4 w-4" />
           Yeni Görev
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {statuses.map((status) => {
-          const statusTasks = getTasksByStatus(status.key);
-          return (
-            <div key={status.key} className="space-y-4">
-              <Card className={`${status.color} border-2`}>
-                <CardHeader className="pb-3">
-                  <CardTitle className="flex items-center justify-between text-lg">
-                    {status.label}
-                    <Badge variant={getStatusColor(status.key)}>
-                      {statusTasks.length}
-                    </Badge>
-                  </CardTitle>
-                </CardHeader>
-              </Card>
-
-              <div className="space-y-3">
-                {statusTasks.map((task) => (
-                  <TaskCard
-                    key={task.id}
-                    task={task}
-                    onTaskClick={() => handleTaskClick(task)}
-                    onStatusChange={handleStatusChange}
-                    statuses={statuses}
-                  />
-                ))}
-              </div>
-            </div>
-          );
-        })}
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+          <Input
+            placeholder="Görev ara..."
+            className="pl-10"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-full sm:w-40">
+            <SelectValue placeholder="Durum" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tüm Durumlar</SelectItem>
+            <SelectItem value="todo">Yapılacak</SelectItem>
+            <SelectItem value="in_progress">Devam Ediyor</SelectItem>
+            <SelectItem value="done">Tamamlandı</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+          <SelectTrigger className="w-full sm:w-40">
+            <SelectValue placeholder="Öncelik" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tüm Öncelikler</SelectItem>
+            <SelectItem value="high">Yüksek</SelectItem>
+            <SelectItem value="medium">Orta</SelectItem>
+            <SelectItem value="low">Düşük</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
-      <TaskFormModal
-        isOpen={isCreateModalOpen}
-        onClose={() => {
-          setIsCreateModalOpen(false);
-          setSelectedTask(null);
-        }}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm font-medium text-gray-600 flex items-center justify-between">
+              YAPILACAK
+              <span className="bg-gray-100 text-gray-800 text-xs px-2 py-1 rounded-full">
+                {tasksByStatus.todo.length}
+              </span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {tasksByStatus.todo.map((task) => (
+              <TaskCard
+                key={task.id}
+                task={task}
+                onEdit={handleEditTask}
+                onDelete={handleDeleteTask}
+                onStatusChange={handleStatusChange}
+              />
+            ))}
+            {tasksByStatus.todo.length === 0 && (
+              <p className="text-gray-500 text-sm text-center py-4">Yapılacak görev yok</p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm font-medium text-gray-600 flex items-center justify-between">
+              DEVAM EDİYOR
+              <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
+                {tasksByStatus.in_progress.length}
+              </span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {tasksByStatus.in_progress.map((task) => (
+              <TaskCard
+                key={task.id}
+                task={task}
+                onEdit={handleEditTask}
+                onDelete={handleDeleteTask}
+                onStatusChange={handleStatusChange}
+              />
+            ))}
+            {tasksByStatus.in_progress.length === 0 && (
+              <p className="text-gray-500 text-sm text-center py-4">Devam eden görev yok</p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm font-medium text-gray-600 flex items-center justify-between">
+              TAMAMLANDI
+              <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
+                {tasksByStatus.done.length}
+              </span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {tasksByStatus.done.map((task) => (
+              <TaskCard
+                key={task.id}
+                task={task}
+                onEdit={handleEditTask}
+                onDelete={handleDeleteTask}
+                onStatusChange={handleStatusChange}
+              />
+            ))}
+            {tasksByStatus.done.length === 0 && (
+              <p className="text-gray-500 text-sm text-center py-4">Tamamlanan görev yok</p>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      <TaskFormModal 
+        open={showFormModal}
+        onOpenChange={setShowFormModal}
         task={selectedTask}
-        onSuccess={() => queryClient.invalidateQueries({ queryKey: ['tasks'] })}
       />
     </div>
   );

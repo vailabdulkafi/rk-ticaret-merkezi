@@ -116,118 +116,136 @@ const Settings = () => {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 md:p-6 space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Ayarlar</h1>
         <p className="text-gray-600">Sistem ayarlarını buradan yönetebilirsiniz</p>
       </div>
 
-      <Tabs defaultValue="company" className="w-full">
-        <TabsList className="grid w-full grid-cols-7">
-          <TabsTrigger value="company">Firma Bilgileri</TabsTrigger>
-          <TabsTrigger value="bank">Banka Bilgileri</TabsTrigger>
-          <TabsTrigger value="payment">Ödeme Şekilleri</TabsTrigger>
-          <TabsTrigger value="delivery">Teslim Şekilleri</TabsTrigger>
-          <TabsTrigger value="parameters">Teklif Parametreleri</TabsTrigger>
-          <TabsTrigger value="dictionary">Sözlük</TabsTrigger>
-          <TabsTrigger value="theme">Tema</TabsTrigger>
-        </TabsList>
+      <Tabs defaultValue="company" className="w-full" orientation="vertical">
+        <div className="flex flex-col lg:flex-row gap-6">
+          <TabsList className="flex flex-col h-auto w-full lg:w-64 bg-gray-50 p-2">
+            <TabsTrigger value="company" className="w-full justify-start text-left">
+              Firma Bilgileri
+            </TabsTrigger>
+            <TabsTrigger value="bank" className="w-full justify-start text-left">
+              Banka Bilgileri
+            </TabsTrigger>
+            <TabsTrigger value="payment" className="w-full justify-start text-left">
+              Ödeme Şekilleri
+            </TabsTrigger>
+            <TabsTrigger value="delivery" className="w-full justify-start text-left">
+              Teslim Şekilleri
+            </TabsTrigger>
+            <TabsTrigger value="parameters" className="w-full justify-start text-left">
+              Teklif Parametreleri
+            </TabsTrigger>
+            <TabsTrigger value="dictionary" className="w-full justify-start text-left">
+              Sözlük
+            </TabsTrigger>
+            <TabsTrigger value="theme" className="w-full justify-start text-left">
+              Tema
+            </TabsTrigger>
+          </TabsList>
 
-        <TabsContent value="company" className="mt-6">
-          <CompanyInfoSettings />
-        </TabsContent>
+          <div className="flex-1">
+            <TabsContent value="company" className="mt-0">
+              <CompanyInfoSettings />
+            </TabsContent>
 
-        <TabsContent value="bank" className="mt-6">
-          <BankInfoSettings />
-        </TabsContent>
+            <TabsContent value="bank" className="mt-0">
+              <BankInfoSettings />
+            </TabsContent>
 
-        <TabsContent value="payment" className="mt-6">
-          <PaymentMethodsSettings />
-        </TabsContent>
+            <TabsContent value="payment" className="mt-0">
+              <PaymentMethodsSettings />
+            </TabsContent>
 
-        <TabsContent value="delivery" className="mt-6">
-          <DeliveryMethodsSettings />
-        </TabsContent>
+            <TabsContent value="delivery" className="mt-0">
+              <DeliveryMethodsSettings />
+            </TabsContent>
 
-        <TabsContent value="parameters" className="mt-6">
-          <QuotationParametersSettings />
-        </TabsContent>
+            <TabsContent value="parameters" className="mt-0">
+              <QuotationParametersSettings />
+            </TabsContent>
 
-        <TabsContent value="dictionary" className="mt-6">
-          <DictionarySettings />
-        </TabsContent>
+            <TabsContent value="dictionary" className="mt-0">
+              <DictionarySettings />
+            </TabsContent>
 
-        <TabsContent value="theme" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Palette className="h-5 w-5" />
-                Tema Renkleri
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="primary-color">Ana Renk (Mavi)</Label>
-                  <div className="flex items-center gap-3">
-                    <Input
-                      id="primary-color"
-                      type="color"
-                      value={primaryColor}
-                      onChange={(e) => setPrimaryColor(e.target.value)}
-                      className="w-20 h-10"
+            <TabsContent value="theme" className="mt-0">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Palette className="h-5 w-5" />
+                    Tema Renkleri
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="primary-color">Ana Renk (Mavi)</Label>
+                      <div className="flex items-center gap-3">
+                        <Input
+                          id="primary-color"
+                          type="color"
+                          value={primaryColor}
+                          onChange={(e) => setPrimaryColor(e.target.value)}
+                          className="w-20 h-10"
+                        />
+                        <Input
+                          type="text"
+                          value={primaryColor}
+                          onChange={(e) => setPrimaryColor(e.target.value)}
+                          className="flex-1"
+                        />
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="secondary-color">İkinci Renk (Beyaz)</Label>
+                      <div className="flex items-center gap-3">
+                        <Input
+                          id="secondary-color"
+                          type="color"
+                          value={secondaryColor}
+                          onChange={(e) => setSecondaryColor(e.target.value)}
+                          className="w-20 h-10"
+                        />
+                        <Input
+                          type="text"
+                          value={secondaryColor}
+                          onChange={(e) => setSecondaryColor(e.target.value)}
+                          className="flex-1"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-4 pt-4">
+                    <div 
+                      className="w-16 h-16 rounded-lg border-2"
+                      style={{ backgroundColor: primaryColor }}
+                      title="Ana Renk Önizleme"
                     />
-                    <Input
-                      type="text"
-                      value={primaryColor}
-                      onChange={(e) => setPrimaryColor(e.target.value)}
-                      className="flex-1"
+                    <div 
+                      className="w-16 h-16 rounded-lg border-2"
+                      style={{ backgroundColor: secondaryColor }}
+                      title="İkinci Renk Önizleme"
                     />
                   </div>
-                </div>
-                
-                <div>
-                  <Label htmlFor="secondary-color">İkinci Renk (Beyaz)</Label>
-                  <div className="flex items-center gap-3">
-                    <Input
-                      id="secondary-color"
-                      type="color"
-                      value={secondaryColor}
-                      onChange={(e) => setSecondaryColor(e.target.value)}
-                      className="w-20 h-10"
-                    />
-                    <Input
-                      type="text"
-                      value={secondaryColor}
-                      onChange={(e) => setSecondaryColor(e.target.value)}
-                      className="flex-1"
-                    />
-                  </div>
-                </div>
-              </div>
 
-              <div className="flex gap-4 pt-4">
-                <div 
-                  className="w-16 h-16 rounded-lg border-2"
-                  style={{ backgroundColor: primaryColor }}
-                  title="Ana Renk Önizleme"
-                />
-                <div 
-                  className="w-16 h-16 rounded-lg border-2"
-                  style={{ backgroundColor: secondaryColor }}
-                  title="İkinci Renk Önizleme"
-                />
-              </div>
-
-              <Button 
-                onClick={handleSaveTheme}
-                disabled={updateThemeMutation.isPending}
-              >
-                {updateThemeMutation.isPending ? 'Kaydediliyor...' : 'Tema Ayarlarını Kaydet'}
-              </Button>
-            </CardContent>
-          </Card>
-        </TabsContent>
+                  <Button 
+                    onClick={handleSaveTheme}
+                    disabled={updateThemeMutation.isPending}
+                  >
+                    {updateThemeMutation.isPending ? 'Kaydediliyor...' : 'Tema Ayarlarını Kaydet'}
+                  </Button>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </div>
+        </div>
       </Tabs>
     </div>
   );
