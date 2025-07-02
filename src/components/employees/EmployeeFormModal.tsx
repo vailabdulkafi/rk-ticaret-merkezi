@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -62,12 +63,17 @@ export function EmployeeFormModal({ open, onOpenChange, employee }: EmployeeForm
   const { data: users } = useQuery({
     queryKey: ['users-for-employee'],
     queryFn: async () => {
+      console.log('Kullanıcılar yükleniyor...');
       const { data, error } = await supabase
         .from('profiles')
         .select('id, first_name, last_name, email')
         .order('first_name');
       
-      if (error) throw error;
+      if (error) {
+        console.error('Kullanıcı yükleme hatası:', error);
+        throw error;
+      }
+      console.log('Yüklenen kullanıcılar:', data);
       return data;
     }
   });
@@ -76,6 +82,7 @@ export function EmployeeFormModal({ open, onOpenChange, employee }: EmployeeForm
   const { data: managers } = useQuery({
     queryKey: ['managers'],
     queryFn: async () => {
+      console.log('Müdürler yükleniyor...');
       const { data, error } = await supabase
         .from('employees')
         .select(`
@@ -87,7 +94,11 @@ export function EmployeeFormModal({ open, onOpenChange, employee }: EmployeeForm
         .in('employee_roles.role', ['manager', 'director'])
         .eq('employee_roles.is_active', true);
       
-      if (error) throw error;
+      if (error) {
+        console.error('Müdür yükleme hatası:', error);
+        throw error;
+      }
+      console.log('Yüklenen müdürler:', data);
       return data;
     }
   });
@@ -123,6 +134,8 @@ export function EmployeeFormModal({ open, onOpenChange, employee }: EmployeeForm
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    console.log('Form gönderiliyor:', formData);
+    
     if (!formData.user_id) {
       toast.error('Lütfen bir kullanıcı seçin');
       return;
@@ -156,6 +169,8 @@ export function EmployeeFormModal({ open, onOpenChange, employee }: EmployeeForm
 
   const createMutation = useMutation({
     mutationFn: async (data: EmployeeFormData) => {
+      console.log('Çalışan oluşturuluyor:', data);
+      
       // Çalışan oluştur
       const { data: employeeData, error: employeeError } = await supabase
         .from('employees')
@@ -172,7 +187,12 @@ export function EmployeeFormModal({ open, onOpenChange, employee }: EmployeeForm
         .select()
         .single();
 
-      if (employeeError) throw employeeError;
+      if (employeeError) {
+        console.error('Çalışan oluşturma hatası:', employeeError);
+        throw employeeError;
+      }
+
+      console.log('Çalışan oluşturuldu:', employeeData);
 
       // Rolleri ekle
       if (data.roles.length > 0) {
@@ -182,15 +202,22 @@ export function EmployeeFormModal({ open, onOpenChange, employee }: EmployeeForm
           assigned_by: user?.id
         }));
 
+        console.log('Roller ekleniyor:', roleInserts);
+
         const { error: rolesError } = await supabase
           .from('employee_roles')
           .insert(roleInserts);
 
-        if (rolesError) throw rolesError;
+        if (rolesError) {
+          console.error('Rol ekleme hatası:', rolesError);
+          throw rolesError;
+        }
       }
 
       // Müdür ataması varsa hiyerarşi ekle
       if (data.manager_id) {
+        console.log('Hiyerarşi ekleniyor:', data.manager_id);
+        
         const { error: hierarchyError } = await supabase
           .from('employee_hierarchy')
           .insert({
@@ -199,22 +226,29 @@ export function EmployeeFormModal({ open, onOpenChange, employee }: EmployeeForm
             created_by: user?.id
           });
 
-        if (hierarchyError) throw hierarchyError;
+        if (hierarchyError) {
+          console.error('Hiyerarşi ekleme hatası:', hierarchyError);
+          throw hierarchyError;
+        }
       }
 
       return employeeData;
     },
     onSuccess: () => {
+      console.log('Çalışan başarıyla oluşturuldu');
       toast.success('Çalışan başarıyla oluşturuldu');
       onSuccess();
     },
     onError: (error: any) => {
-      toast.error(error.message || 'Çalışan oluşturulurken hata oluştu');
+      console.error('Çalışan oluşturma genel hatası:', error);
+      toast.error('Çalışan oluşturulurken hata oluştu: ' + error.message);
     }
   });
 
   const updateMutation = useMutation({
     mutationFn: async (data: EmployeeFormData) => {
+      console.log('Çalışan güncelleniyor:', data);
+      
       // Çalışan güncelle
       const { error: employeeError } = await supabase
         .from('employees')
@@ -229,7 +263,10 @@ export function EmployeeFormModal({ open, onOpenChange, employee }: EmployeeForm
         })
         .eq('id', employee.id);
 
-      if (employeeError) throw employeeError;
+      if (employeeError) {
+        console.error('Çalışan güncelleme hatası:', employeeError);
+        throw employeeError;
+      }
 
       // Mevcut rolleri pasif yap
       const { error: deactivateRolesError } = await supabase
@@ -237,7 +274,10 @@ export function EmployeeFormModal({ open, onOpenChange, employee }: EmployeeForm
         .update({ is_active: false })
         .eq('employee_id', employee.id);
 
-      if (deactivateRolesError) throw deactivateRolesError;
+      if (deactivateRolesError) {
+        console.error('Rol pasifleştirme hatası:', deactivateRolesError);
+        throw deactivateRolesError;
+      }
 
       // Yeni rolleri ekle
       if (data.roles.length > 0) {
@@ -251,7 +291,10 @@ export function EmployeeFormModal({ open, onOpenChange, employee }: EmployeeForm
           .from('employee_roles')
           .insert(roleInserts);
 
-        if (rolesError) throw rolesError;
+        if (rolesError) {
+          console.error('Yeni rol ekleme hatası:', rolesError);
+          throw rolesError;
+        }
       }
 
       // Mevcut hiyerarşiyi sil
@@ -260,7 +303,10 @@ export function EmployeeFormModal({ open, onOpenChange, employee }: EmployeeForm
         .delete()
         .eq('employee_id', employee.id);
 
-      if (deleteHierarchyError) throw deleteHierarchyError;
+      if (deleteHierarchyError) {
+        console.error('Hiyerarşi silme hatası:', deleteHierarchyError);
+        throw deleteHierarchyError;
+      }
 
       // Yeni müdür ataması varsa hiyerarşi ekle
       if (data.manager_id) {
@@ -272,15 +318,20 @@ export function EmployeeFormModal({ open, onOpenChange, employee }: EmployeeForm
             created_by: user?.id
           });
 
-        if (hierarchyError) throw hierarchyError;
+        if (hierarchyError) {
+          console.error('Yeni hiyerarşi ekleme hatası:', hierarchyError);
+          throw hierarchyError;
+        }
       }
     },
     onSuccess: () => {
+      console.log('Çalışan başarıyla güncellendi');
       toast.success('Çalışan başarıyla güncellendi');
       onSuccess();
     },
     onError: (error: any) => {
-      toast.error(error.message || 'Çalışan güncellenirken hata oluştu');
+      console.error('Çalışan güncelleme genel hatası:', error);
+      toast.error('Çalışan güncellenirken hata oluştu: ' + error.message);
     }
   });
 
