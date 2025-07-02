@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -10,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Plus, Search, User, Edit, Trash2, Phone, Mail } from 'lucide-react';
 import { toast } from 'sonner';
-import EmployeeFormModal from '@/components/employees/EmployeeFormModal';
+import { EmployeeFormModal } from '@/components/employees/EmployeeFormModal';
 
 const Employees = () => {
   const { user } = useAuth();

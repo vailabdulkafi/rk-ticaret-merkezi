@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -9,8 +8,8 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Search, Filter } from 'lucide-react';
 import { toast } from 'sonner';
-import TaskCard from '@/components/tasks/TaskCard';
-import TaskFormModal from '@/components/tasks/TaskFormModal';
+import { TaskCard } from '@/components/tasks/TaskCard';
+import { TaskFormModal } from '@/components/tasks/TaskFormModal';
 
 const Tasks = () => {
   const { user } = useAuth();
