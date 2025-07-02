@@ -28,8 +28,8 @@ const Tasks = () => {
         .from('tasks')
         .select(`
           *,
-          assigned_user:assigned_to(first_name, last_name, email),
-          created_user:created_by(first_name, last_name, email)
+          assigned_user:profiles!tasks_assigned_to_fkey(first_name, last_name),
+          created_user:profiles!tasks_created_by_fkey(first_name, last_name)
         `)
         .order('created_at', { ascending: false });
       
