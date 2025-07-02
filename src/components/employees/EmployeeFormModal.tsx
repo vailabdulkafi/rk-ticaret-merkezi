@@ -23,10 +23,9 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 
 interface EmployeeFormModalProps {
-  isOpen: boolean;
-  onClose: () => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   employee?: any;
-  onSuccess: () => void;
 }
 
 type EmployeeRole = 'employee' | 'specialist' | 'manager' | 'director';
@@ -43,7 +42,7 @@ interface EmployeeFormData {
   manager_id: string;
 }
 
-export function EmployeeFormModal({ isOpen, onClose, employee, onSuccess }: EmployeeFormModalProps) {
+export function EmployeeFormModal({ open, onOpenChange, employee }: EmployeeFormModalProps) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
@@ -121,6 +120,40 @@ export function EmployeeFormModal({ isOpen, onClose, employee, onSuccess }: Empl
     }
   }, [employee]);
 
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!formData.user_id) {
+      toast.error('Lütfen bir kullanıcı seçin');
+      return;
+    }
+
+    if (employee) {
+      updateMutation.mutate(formData);
+    } else {
+      createMutation.mutate(formData);
+    }
+  };
+
+  const handleRoleChange = (role: EmployeeRole, checked: boolean) => {
+    if (checked) {
+      setFormData(prev => ({
+        ...prev,
+        roles: [...prev.roles, role]
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        roles: prev.roles.filter(r => r !== role)
+      }));
+    }
+  };
+
+  const onSuccess = () => {
+    queryClient.invalidateQueries({ queryKey: ['employees'] });
+    onOpenChange(false);
+  };
+
   const createMutation = useMutation({
     mutationFn: async (data: EmployeeFormData) => {
       // Çalışan oluştur
@@ -173,9 +206,7 @@ export function EmployeeFormModal({ isOpen, onClose, employee, onSuccess }: Empl
     },
     onSuccess: () => {
       toast.success('Çalışan başarıyla oluşturuldu');
-      queryClient.invalidateQueries({ queryKey: ['employees'] });
       onSuccess();
-      onClose();
     },
     onError: (error: any) => {
       toast.error(error.message || 'Çalışan oluşturulurken hata oluştu');
@@ -246,48 +277,17 @@ export function EmployeeFormModal({ isOpen, onClose, employee, onSuccess }: Empl
     },
     onSuccess: () => {
       toast.success('Çalışan başarıyla güncellendi');
-      queryClient.invalidateQueries({ queryKey: ['employees'] });
       onSuccess();
-      onClose();
     },
     onError: (error: any) => {
       toast.error(error.message || 'Çalışan güncellenirken hata oluştu');
     }
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!formData.user_id) {
-      toast.error('Lütfen bir kullanıcı seçin');
-      return;
-    }
-
-    if (employee) {
-      updateMutation.mutate(formData);
-    } else {
-      createMutation.mutate(formData);
-    }
-  };
-
-  const handleRoleChange = (role: EmployeeRole, checked: boolean) => {
-    if (checked) {
-      setFormData(prev => ({
-        ...prev,
-        roles: [...prev.roles, role]
-      }));
-    } else {
-      setFormData(prev => ({
-        ...prev,
-        roles: prev.roles.filter(r => r !== role)
-      }));
-    }
-  };
-
   const isLoading = createMutation.isPending || updateMutation.isPending;
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
@@ -444,7 +444,7 @@ export function EmployeeFormModal({ isOpen, onClose, employee, onSuccess }: Empl
           </div>
 
           <div className="flex justify-end space-x-2 pt-4">
-            <Button type="button" variant="outline" onClick={onClose}>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               İptal
             </Button>
             <Button type="submit" disabled={isLoading}>

@@ -2,7 +2,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Calendar, User, Clock, ChevronDown } from 'lucide-react';
+import { Calendar, User, Clock, ChevronDown, Edit, Trash2 } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,7 +21,7 @@ interface Task {
   due_date: string | null;
   created_at: string;
   updated_at: string;
-  assigned_to_profile?: {
+  assigned_user?: {
     first_name: string | null;
     last_name: string | null;
   };
@@ -29,12 +29,12 @@ interface Task {
 
 interface TaskCardProps {
   task: Task;
-  onTaskClick: () => void;
+  onEdit: (task: Task) => void;
+  onDelete: (taskId: string) => void;
   onStatusChange: (taskId: string, newStatus: string) => void;
-  statuses: Array<{ key: string; label: string; color: string }>;
 }
 
-export function TaskCard({ task, onTaskClick, onStatusChange, statuses }: TaskCardProps) {
+export function TaskCard({ task, onEdit, onDelete, onStatusChange }: TaskCardProps) {
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case 'high': return 'destructive';
@@ -53,34 +53,48 @@ export function TaskCard({ task, onTaskClick, onStatusChange, statuses }: TaskCa
     }
   };
 
+  const statuses = [
+    { key: 'todo', label: 'Yapılacak' },
+    { key: 'in_progress', label: 'Devam Ediyor' },
+    { key: 'done', label: 'Tamamlandı' }
+  ];
+
   return (
     <Card className="cursor-pointer hover:shadow-md transition-shadow bg-white">
       <CardHeader className="pb-2">
         <div className="flex items-start justify-between">
           <CardTitle 
             className="text-sm font-medium cursor-pointer hover:text-blue-600"
-            onClick={onTaskClick}
+            onClick={() => onEdit(task)}
           >
             {task.title}
           </CardTitle>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                <ChevronDown className="h-3 w-3" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="bg-white">
-              {statuses.map((status) => (
-                <DropdownMenuItem
-                  key={status.key}
-                  onClick={() => onStatusChange(task.id, status.key)}
-                  className="cursor-pointer"
-                >
-                  {status.label}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <div className="flex gap-1">
+            <Button variant="ghost" size="sm" onClick={() => onEdit(task)}>
+              <Edit className="h-3 w-3" />
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => onDelete(task.id)}>
+              <Trash2 className="h-3 w-3 text-red-500" />
+            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                  <ChevronDown className="h-3 w-3" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="bg-white">
+                {statuses.map((status) => (
+                  <DropdownMenuItem
+                    key={status.key}
+                    onClick={() => onStatusChange(task.id, status.key)}
+                    className="cursor-pointer"
+                  >
+                    {status.label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
         {task.description && (
           <p className="text-xs text-gray-600 line-clamp-2">{task.description}</p>
@@ -94,10 +108,10 @@ export function TaskCard({ task, onTaskClick, onStatusChange, statuses }: TaskCa
             </Badge>
           </div>
           
-          {task.assigned_to_profile && (
+          {task.assigned_user && (
             <div className="flex items-center text-xs text-gray-500">
               <User className="mr-1 h-3 w-3" />
-              <span>{task.assigned_to_profile.first_name} {task.assigned_to_profile.last_name}</span>
+              <span>{task.assigned_user.first_name} {task.assigned_user.last_name}</span>
             </div>
           )}
           

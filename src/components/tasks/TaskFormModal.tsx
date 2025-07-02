@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import {
@@ -36,14 +36,15 @@ interface Task {
 }
 
 interface TaskFormModalProps {
-  isOpen: boolean;
-  onClose: () => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   task?: Task | null;
-  onSuccess: () => void;
 }
 
-export function TaskFormModal({ isOpen, onClose, task, onSuccess }: TaskFormModalProps) {
+export function TaskFormModal({ open, onOpenChange, task }: TaskFormModalProps) {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
+  
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -117,8 +118,8 @@ export function TaskFormModal({ isOpen, onClose, task, onSuccess }: TaskFormModa
     },
     onSuccess: () => {
       toast.success(task ? 'Görev güncellendi' : 'Görev oluşturuldu');
-      onSuccess();
-      onClose();
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      onOpenChange(false);
     },
     onError: (error) => {
       console.error('Task save error:', error);
@@ -136,7 +137,7 @@ export function TaskFormModal({ isOpen, onClose, task, onSuccess }: TaskFormModa
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md bg-white">
         <DialogHeader>
           <DialogTitle>
@@ -235,7 +236,7 @@ export function TaskFormModal({ isOpen, onClose, task, onSuccess }: TaskFormModa
           </div>
 
           <div className="flex justify-end space-x-2 pt-4">
-            <Button type="button" variant="outline" onClick={onClose}>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               İptal
             </Button>
             <Button type="submit" disabled={saveMutation.isPending}>
