@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -443,7 +442,6 @@ export function EmployeeFormModal({ open, onOpenChange, employee }: EmployeeForm
                 <SelectValue placeholder="Müdür seçin (opsiyonel)" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Müdür yok</SelectItem>
                 {managers?.map(manager => (
                   <SelectItem key={manager.id} value={manager.id}>
                     {manager.profiles?.first_name} {manager.profiles?.last_name}
