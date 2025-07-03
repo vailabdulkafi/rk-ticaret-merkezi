@@ -99,7 +99,7 @@ export function TaskFormModal({ open, onOpenChange, task }: TaskFormModalProps) 
         ...data,
         created_by: user?.id,
         updated_at: new Date().toISOString(),
-        assigned_to: data.assigned_to || null,
+        assigned_to: data.assigned_to === 'unassigned' || data.assigned_to === '' ? null : data.assigned_to,
         due_date: data.due_date || null,
       };
 
