@@ -1,7 +1,9 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Calendar, Clock, MapPin } from 'lucide-react';
+import { Calendar, Clock, MapPin, Plus } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { AgendaFormModal } from './AgendaFormModal';
 
 interface AgendaItem {
   id: string;
@@ -35,6 +37,8 @@ const Agenda = () => {
     }
   ]);
 
+  const [showModal, setShowModal] = useState(false);
+
   const getTypeColor = (type: string) => {
     switch (type) {
       case 'meeting':
@@ -61,47 +65,73 @@ const Agenda = () => {
     }
   };
 
+  const handleAddAgendaItem = (newItem: Omit<AgendaItem, 'id'>) => {
+    const agendaItem: AgendaItem = {
+      ...newItem,
+      id: Date.now().toString()
+    };
+    setAgendaItems(prev => [...prev, agendaItem]);
+  };
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-base md:text-lg">
-          <Calendar className="h-4 w-4 md:h-5 md:w-5" />
-          Bugünün Ajandası
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-3">
-          {agendaItems.length === 0 ? (
-            <div className="text-center text-gray-500 text-sm py-4">
-              Bugün için planlanmış etkinlik yok
-            </div>
-          ) : (
-            agendaItems.map((item) => (
-              <div key={item.id} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                <div className="flex items-center gap-1 text-sm text-gray-600 min-w-[60px]">
-                  <Clock className="h-3 w-3" />
-                  {item.time}
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-start justify-between gap-2">
-                    <h4 className="font-medium text-sm">{item.title}</h4>
-                    <span className={`text-xs px-2 py-1 rounded-full ${getTypeColor(item.type)}`}>
-                      {getTypeText(item.type)}
-                    </span>
-                  </div>
-                  {item.location && (
-                    <div className="flex items-center gap-1 text-xs text-gray-500 mt-1">
-                      <MapPin className="h-3 w-3" />
-                      {item.location}
-                    </div>
-                  )}
-                </div>
+    <>
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2 text-base md:text-lg">
+              <Calendar className="h-4 w-4 md:h-5 md:w-5" />
+              Bugünün Ajandası
+            </CardTitle>
+            <Button
+              size="sm"
+              onClick={() => setShowModal(true)}
+              className="flex items-center gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              Ekle
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            {agendaItems.length === 0 ? (
+              <div className="text-center text-gray-500 text-sm py-4">
+                Bugün için planlanmış etkinlik yok
               </div>
-            ))
-          )}
-        </div>
-      </CardContent>
-    </Card>
+            ) : (
+              agendaItems.map((item) => (
+                <div key={item.id} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                  <div className="flex items-center gap-1 text-sm text-gray-600 min-w-[60px]">
+                    <Clock className="h-3 w-3" />
+                    {item.time}
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-start justify-between gap-2">
+                      <h4 className="font-medium text-sm">{item.title}</h4>
+                      <span className={`text-xs px-2 py-1 rounded-full ${getTypeColor(item.type)}`}>
+                        {getTypeText(item.type)}
+                      </span>
+                    </div>
+                    {item.location && (
+                      <div className="flex items-center gap-1 text-xs text-gray-500 mt-1">
+                        <MapPin className="h-3 w-3" />
+                        {item.location}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      <AgendaFormModal
+        open={showModal}
+        onOpenChange={setShowModal}
+        onAdd={handleAddAgendaItem}
+      />
+    </>
   );
 };
 

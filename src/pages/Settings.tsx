@@ -15,7 +15,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { Palette } from 'lucide-react';
+import { Palette, Plus } from 'lucide-react';
 
 const Settings = () => {
   const { user } = useAuth();
@@ -117,9 +117,15 @@ const Settings = () => {
 
   return (
     <div className="p-4 md:p-6 space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Ayarlar</h1>
-        <p className="text-gray-600">Sistem ayarlarını buradan yönetebilirsiniz</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Ayarlar</h1>
+          <p className="text-gray-600">Sistem ayarlarını buradan yönetebilirsiniz</p>
+        </div>
+        <Button className="flex items-center gap-2">
+          <Plus className="h-4 w-4" />
+          Yeni Ayar Ekle
+        </Button>
       </div>
 
       <Tabs defaultValue="company" className="w-full" orientation="vertical">
