@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,15 +18,29 @@ interface AgendaFormModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onAdd: (item: AgendaItem) => void;
+  editingItem?: AgendaItem & { id: string } | null;
 }
 
-export function AgendaFormModal({ open, onOpenChange, onAdd }: AgendaFormModalProps) {
+export function AgendaFormModal({ open, onOpenChange, onAdd, editingItem }: AgendaFormModalProps) {
   const [formData, setFormData] = useState<AgendaItem>({
     title: '',
     time: '',
     location: '',
     type: 'meeting'
   });
+
+  useEffect(() => {
+    if (editingItem) {
+      setFormData({
+        title: editingItem.title,
+        time: editingItem.time,
+        location: editingItem.location || '',
+        type: editingItem.type
+      });
+    } else {
+      setFormData({ title: '', time: '', location: '', type: 'meeting' });
+    }
+  }, [editingItem, open]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,16 +60,17 @@ export function AgendaFormModal({ open, onOpenChange, onAdd }: AgendaFormModalPr
       location: formData.location || undefined
     });
     
-    toast.success('Etkinlik ajandaya eklendi');
+    toast.success(editingItem ? 'Etkinlik güncellendi' : 'Etkinlik ajandaya eklendi');
     onOpenChange(false);
-    setFormData({ title: '', time: '', location: '', type: 'meeting' });
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Yeni Etkinlik Ekle</DialogTitle>
+          <DialogTitle>
+            {editingItem ? 'Etkinlik Düzenle' : 'Yeni Etkinlik Ekle'}
+          </DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -113,7 +128,7 @@ export function AgendaFormModal({ open, onOpenChange, onAdd }: AgendaFormModalPr
               İptal
             </Button>
             <Button type="submit">
-              Ekle
+              {editingItem ? 'Güncelle' : 'Ekle'}
             </Button>
           </div>
         </form>

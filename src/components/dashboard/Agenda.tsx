@@ -1,6 +1,6 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Calendar, Clock, MapPin, Plus } from 'lucide-react';
+import { Calendar, Clock, MapPin, Plus, Edit } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { AgendaFormModal } from './AgendaFormModal';
@@ -38,6 +38,7 @@ const Agenda = () => {
   ]);
 
   const [showModal, setShowModal] = useState(false);
+  const [editingItem, setEditingItem] = useState<AgendaItem | null>(null);
 
   const getTypeColor = (type: string) => {
     switch (type) {
@@ -73,6 +74,28 @@ const Agenda = () => {
     setAgendaItems(prev => [...prev, agendaItem]);
   };
 
+  const handleEditAgendaItem = (updatedItem: Omit<AgendaItem, 'id'>) => {
+    if (editingItem) {
+      setAgendaItems(prev => 
+        prev.map(item => 
+          item.id === editingItem.id 
+            ? { ...updatedItem, id: editingItem.id }
+            : item
+        )
+      );
+    }
+  };
+
+  const handleEditClick = (item: AgendaItem) => {
+    setEditingItem(item);
+    setShowModal(true);
+  };
+
+  const handleModalClose = () => {
+    setShowModal(false);
+    setEditingItem(null);
+  };
+
   return (
     <>
       <Card>
@@ -100,7 +123,7 @@ const Agenda = () => {
               </div>
             ) : (
               agendaItems.map((item) => (
-                <div key={item.id} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                <div key={item.id} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors group">
                   <div className="flex items-center gap-1 text-sm text-gray-600 min-w-[60px]">
                     <Clock className="h-3 w-3" />
                     {item.time}
@@ -108,9 +131,19 @@ const Agenda = () => {
                   <div className="flex-1">
                     <div className="flex items-start justify-between gap-2">
                       <h4 className="font-medium text-sm">{item.title}</h4>
-                      <span className={`text-xs px-2 py-1 rounded-full ${getTypeColor(item.type)}`}>
-                        {getTypeText(item.type)}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className={`text-xs px-2 py-1 rounded-full ${getTypeColor(item.type)}`}>
+                          {getTypeText(item.type)}
+                        </span>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() => handleEditClick(item)}
+                        >
+                          <Edit className="h-3 w-3" />
+                        </Button>
+                      </div>
                     </div>
                     {item.location && (
                       <div className="flex items-center gap-1 text-xs text-gray-500 mt-1">
@@ -128,8 +161,9 @@ const Agenda = () => {
 
       <AgendaFormModal
         open={showModal}
-        onOpenChange={setShowModal}
-        onAdd={handleAddAgendaItem}
+        onOpenChange={handleModalClose}
+        onAdd={editingItem ? handleEditAgendaItem : handleAddAgendaItem}
+        editingItem={editingItem}
       />
     </>
   );
