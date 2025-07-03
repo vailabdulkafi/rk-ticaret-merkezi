@@ -215,7 +215,7 @@ export function TaskFormModal({ open, onOpenChange, task }: TaskFormModalProps) 
                 <SelectValue placeholder="Kişi seç" />
               </SelectTrigger>
               <SelectContent className="bg-white">
-                <SelectItem value="">Atanmamış</SelectItem>
+                <SelectItem value="unassigned">Atanmamış</SelectItem>
                 {employees?.map((employee) => (
                   <SelectItem key={employee.user_id} value={employee.user_id}>
                     {employee.profiles?.first_name} {employee.profiles?.last_name}
