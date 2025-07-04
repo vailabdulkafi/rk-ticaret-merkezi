@@ -100,7 +100,7 @@ const QuotationFormModal = ({ open, onOpenChange, quotation }: QuotationFormModa
           quotation_number: data.quotation_number,
           company_id: data.company_id,
           quotation_date: data.quotation_date,
-          valid_until: data.valid_until,
+          valid_until: data.valid_until || null, // Convert empty string to null
           currency: data.currency,
           status: data.status,
           language: data.language,
@@ -133,7 +133,7 @@ const QuotationFormModal = ({ open, onOpenChange, quotation }: QuotationFormModa
           quotation_number: data.quotation_number,
           company_id: data.company_id,
           quotation_date: data.quotation_date,
-          valid_until: data.valid_until,
+          valid_until: data.valid_until || null, // Convert empty string to null
           currency: data.currency,
           status: data.status,
           language: data.language,
