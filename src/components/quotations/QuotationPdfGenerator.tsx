@@ -1,6 +1,6 @@
 
 import { jsPDF } from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 
 interface QuotationPdfData {
   quotation: any;
@@ -44,7 +44,7 @@ export const generateQuotationPdf = async (data: QuotationPdfData) => {
     getProductProperties(item.products?.product_properties)
   ]);
   
-  (doc as any).autoTable({
+  autoTable(doc, {
     head: [['Ürün Adı', 'Marka', 'Model', 'Miktar', 'Birim Fiyat', 'İndirim', 'Toplam', 'Özellikler']],
     body: tableData,
     startY: 90,
