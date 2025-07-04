@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -8,16 +7,20 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Search, FileText, Edit, Trash2, Building2, RefreshCw, ShoppingCart, Download } from 'lucide-react';
+import { Plus, Search, FileText, Edit, Trash2, Building2, RefreshCw, ShoppingCart, Download, Package2 } from 'lucide-react';
 import { toast } from 'sonner';
 import QuotationFormModal from '@/components/quotations/QuotationFormModal';
+import QuotationItemsModal from '@/components/quotations/QuotationItemsModal';
+import { generateQuotationPdf } from '@/components/quotations/QuotationPdfGenerator';
 
 const Quotations = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
   const [showFormModal, setShowFormModal] = useState(false);
+  const [showItemsModal, setShowItemsModal] = useState(false);
   const [editingQuotation, setEditingQuotation] = useState<any>(null);
+  const [selectedQuotation, setSelectedQuotation] = useState<any>(null);
 
   const { data: quotations, isLoading } = useQuery({
     queryKey: ['quotations'],
@@ -133,9 +136,48 @@ const Quotations = () => {
     setEditingQuotation(null);
   };
 
-  const handlePdfDownload = (quotation: any) => {
-    // PDF download functionality will be implemented later
-    toast.info('PDF indirme özelliği yakında eklenecek');
+  const handleItemsClick = (quotation: any) => {
+    setSelectedQuotation(quotation);
+    setShowItemsModal(true);
+  };
+
+  const handlePdfDownload = async (quotation: any) => {
+    try {
+      // Teklif ürünlerini ve firma bilgilerini çek
+      const { data: items } = await supabase
+        .from('quotation_items')
+        .select(`
+          *,
+          products (
+            name,
+            brand,
+            model,
+            product_properties (
+              property_name,
+              property_value,
+              show_in_quotation
+            )
+          )
+        `)
+        .eq('quotation_id', quotation.id);
+
+      const { data: company } = await supabase
+        .from('companies')
+        .select('*')
+        .eq('id', quotation.company_id)
+        .single();
+
+      await generateQuotationPdf({
+        quotation,
+        items: items || [],
+        company
+      });
+
+      toast.success('PDF başarıyla oluşturuldu');
+    } catch (error) {
+      console.error('PDF oluşturma hatası:', error);
+      toast.error('PDF oluşturulurken hata oluştu');
+    }
   };
 
   const filteredQuotations = quotations?.filter(quotation =>
@@ -283,6 +325,14 @@ const Quotations = () => {
                       <Button 
                         variant="ghost" 
                         size="sm"
+                        onClick={() => handleItemsClick(quotation)}
+                        title="Ürünler"
+                      >
+                        <Package2 className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
                         onClick={() => createRevisionMutation.mutate(quotation.id)}
                         disabled={createRevisionMutation.isPending}
                         title="Revize Et"
@@ -348,6 +398,12 @@ const Quotations = () => {
         open={showFormModal}
         onOpenChange={handleCloseModal}
         quotation={editingQuotation}
+      />
+
+      <QuotationItemsModal 
+        open={showItemsModal}
+        onOpenChange={setShowItemsModal}
+        quotation={selectedQuotation}
       />
     </div>
   );
