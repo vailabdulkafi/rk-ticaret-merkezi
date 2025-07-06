@@ -7,6 +7,11 @@ import PaymentMethodsSettings from '@/components/settings/PaymentMethodsSettings
 import DeliveryMethodsSettings from '@/components/settings/DeliveryMethodsSettings';
 import DictionarySettings from '@/components/settings/DictionarySettings';
 import QuotationParametersSettings from '@/components/settings/QuotationParametersSettings';
+import CountriesSettings from '@/components/settings/CountriesSettings';
+import CompanyTypesSettings from '@/components/settings/CompanyTypesSettings';
+import BrandsSettings from '@/components/settings/BrandsSettings';
+import CurrenciesSettings from '@/components/settings/CurrenciesSettings';
+import QuotationStatusesSettings from '@/components/settings/QuotationStatusesSettings';
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -149,6 +154,21 @@ const Settings = () => {
             <TabsTrigger value="dictionary" className="w-full justify-start text-left">
               Sözlük
             </TabsTrigger>
+            <TabsTrigger value="countries" className="w-full justify-start text-left">
+              Ülkeler
+            </TabsTrigger>
+            <TabsTrigger value="companytypes" className="w-full justify-start text-left">
+              Firma Tipleri
+            </TabsTrigger>
+            <TabsTrigger value="brands" className="w-full justify-start text-left">
+              Markalar
+            </TabsTrigger>
+            <TabsTrigger value="currencies" className="w-full justify-start text-left">
+              Para Birimleri
+            </TabsTrigger>
+            <TabsTrigger value="quotationstatus" className="w-full justify-start text-left">
+              Teklif Durumları
+            </TabsTrigger>
             <TabsTrigger value="theme" className="w-full justify-start text-left">
               Tema
             </TabsTrigger>
@@ -177,6 +197,26 @@ const Settings = () => {
 
             <TabsContent value="dictionary" className="mt-0">
               <DictionarySettings />
+            </TabsContent>
+
+            <TabsContent value="countries" className="mt-0">
+              <CountriesSettings />
+            </TabsContent>
+
+            <TabsContent value="companytypes" className="mt-0">
+              <CompanyTypesSettings />
+            </TabsContent>
+
+            <TabsContent value="brands" className="mt-0">
+              <BrandsSettings />
+            </TabsContent>
+
+            <TabsContent value="currencies" className="mt-0">
+              <CurrenciesSettings />
+            </TabsContent>
+
+            <TabsContent value="quotationstatus" className="mt-0">
+              <QuotationStatusesSettings />
             </TabsContent>
 
             <TabsContent value="theme" className="mt-0">
@@ -241,11 +281,8 @@ const Settings = () => {
                     />
                   </div>
 
-                  <Button 
-                    onClick={handleSaveTheme}
-                    disabled={updateThemeMutation.isPending}
-                  >
-                    {updateThemeMutation.isPending ? 'Kaydediliyor...' : 'Tema Ayarlarını Kaydet'}
+                  <Button onClick={() => {}}>
+                    Tema Ayarlarını Kaydet
                   </Button>
                 </CardContent>
               </Card>
