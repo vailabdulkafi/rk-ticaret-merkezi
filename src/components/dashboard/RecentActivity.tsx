@@ -14,17 +14,36 @@ const RecentActivity = () => {
       const { data, error } = await supabase
         .from('activity_logs')
         .select(`
-          *,
-          profiles:user_id (
-            first_name,
-            last_name
-          )
+          *
         `)
         .order('created_at', { ascending: false })
         .limit(10);
       
       if (error) throw error;
-      return data;
+      
+      // Get user details separately for each activity
+      const activitiesWithUsers = await Promise.all(
+        (data || []).map(async (activity) => {
+          if (activity.user_id) {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('first_name, last_name')
+              .eq('id', activity.user_id)
+              .single();
+            
+            return {
+              ...activity,
+              profiles: profile
+            };
+          }
+          return {
+            ...activity,
+            profiles: null
+          };
+        })
+      );
+      
+      return activitiesWithUsers;
     },
   });
 
@@ -159,8 +178,8 @@ const RecentActivity = () => {
           )}
         </div>
       </CardContent>
-    </Card>
-  );
+    );
+  }
 };
 
 export default RecentActivity;
