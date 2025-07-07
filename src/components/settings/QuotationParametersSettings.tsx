@@ -91,10 +91,21 @@ const QuotationParametersSettings = () => {
       const parameter = parameters?.find(p => p.id === id);
       if (!parameter) return;
 
-      const updatedValue = {
-        ...parameter.value,
-        showInPdf
-      };
+      // Güvenli tip kontrolü ve değer güncelleme
+      const currentValue = parameter.value;
+      let updatedValue;
+      
+      if (typeof currentValue === 'object' && currentValue !== null) {
+        updatedValue = {
+          ...currentValue,
+          showInPdf
+        };
+      } else {
+        updatedValue = {
+          name: currentValue,
+          showInPdf
+        };
+      }
 
       const { error } = await supabase
         .from('company_settings')
@@ -225,13 +236,13 @@ const QuotationParametersSettings = () => {
                         <div className="flex items-center space-x-4">
                           <span className="font-medium">{param.name}</span>
                           <span className="text-gray-600">
-                            {typeof param.value === 'object' ? param.value.name : param.value}
+                            {typeof param.value === 'object' ? param.value?.name : param.value}
                           </span>
                         </div>
                         <div className="flex items-center space-x-2">
                           <div className="flex items-center space-x-2">
                             <Switch
-                              checked={param.value?.showInPdf ?? true}
+                              checked={typeof param.value === 'object' ? param.value?.showInPdf ?? true : true}
                               onCheckedChange={(checked) => 
                                 updatePdfVisibilityMutation.mutate({ id: param.id, showInPdf: checked })
                               }
