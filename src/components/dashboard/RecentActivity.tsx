@@ -178,8 +178,8 @@ const RecentActivity = () => {
           )}
         </div>
       </CardContent>
-    );
-  }
+    </Card>
+  );
 };
 
 export default RecentActivity;
