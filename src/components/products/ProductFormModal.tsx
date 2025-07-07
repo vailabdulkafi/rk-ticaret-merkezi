@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -94,6 +93,52 @@ const ProductFormModal = ({ open, onOpenChange, product }: ProductFormModalProps
     },
     enabled: !!user,
   });
+
+  // Ayarlardan para birimlerini çek
+  const { data: currencies } = useQuery({
+    queryKey: ['currencies-settings'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('company_settings')
+        .select('*')
+        .eq('setting_type', 'currencies')
+        .order('name');
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user,
+  });
+
+  // Ayarlardan markaları çek
+  const { data: brands } = useQuery({
+    queryKey: ['brands-settings'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('company_settings')
+        .select('*')
+        .eq('setting_type', 'brands')
+        .order('name');
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user,
+  });
+
+  // Birimler için sabit liste (genellikle değişmeyen standart birimler)
+  const units = [
+    { value: 'adet', label: 'Adet' },
+    { value: 'kg', label: 'Kilogram' },
+    { value: 'lt', label: 'Litre' },
+    { value: 'm', label: 'Metre' },
+    { value: 'm2', label: 'm²' },
+    { value: 'm3', label: 'm³' },
+    { value: 'paket', label: 'Paket' },
+    { value: 'kutu', label: 'Kutu' },
+    { value: 'ton', label: 'Ton' },
+    { value: 'gr', label: 'Gram' }
+  ];
 
   const createMutation = useMutation({
     mutationFn: async (data: ProductFormData) => {
@@ -222,12 +267,18 @@ const ProductFormModal = ({ open, onOpenChange, product }: ProductFormModalProps
 
             <div>
               <Label htmlFor="brand">Marka</Label>
-              <Input
-                id="brand"
-                value={formData.brand}
-                onChange={(e) => handleInputChange('brand', e.target.value)}
-                placeholder="Ürün markası"
-              />
+              <Select value={formData.brand} onValueChange={(value) => handleInputChange('brand', value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Marka seçin" />
+                </SelectTrigger>
+                <SelectContent>
+                  {brands?.map((brand) => (
+                    <SelectItem key={brand.id} value={typeof brand.value === 'object' ? brand.value?.name || '' : brand.value}>
+                      {typeof brand.value === 'object' ? brand.value?.name : brand.value}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div>
@@ -272,9 +323,11 @@ const ProductFormModal = ({ open, onOpenChange, product }: ProductFormModalProps
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="TRY">TRY</SelectItem>
-                  <SelectItem value="USD">USD</SelectItem>
-                  <SelectItem value="EUR">EUR</SelectItem>
+                  {currencies?.map((currency) => (
+                    <SelectItem key={currency.id} value={typeof currency.value === 'object' ? currency.value?.name || '' : currency.value}>
+                      {typeof currency.value === 'object' ? currency.value?.name : currency.value}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -286,12 +339,11 @@ const ProductFormModal = ({ open, onOpenChange, product }: ProductFormModalProps
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="adet">Adet</SelectItem>
-                  <SelectItem value="kg">Kg</SelectItem>
-                  <SelectItem value="lt">Litre</SelectItem>
-                  <SelectItem value="m">Metre</SelectItem>
-                  <SelectItem value="m2">m²</SelectItem>
-                  <SelectItem value="paket">Paket</SelectItem>
+                  {units.map(unit => (
+                    <SelectItem key={unit.value} value={unit.value}>
+                      {unit.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
