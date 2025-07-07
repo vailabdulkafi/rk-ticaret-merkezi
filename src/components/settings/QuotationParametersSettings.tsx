@@ -1,80 +1,57 @@
+
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { Plus, Edit, Trash2, Save, X, Settings } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
-
-interface QuotationParameter {
-  id: string;
-  name: string;
-  value: {
-    parameter_type: string;
-    is_required: boolean;
-    default_value: string;
-  };
-  language: string;
-  created_at: string;
-}
+import { Trash2, Plus } from 'lucide-react';
 
 const QuotationParametersSettings = () => {
-  const { user } = useAuth();
   const queryClient = useQueryClient();
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editingData, setEditingData] = useState<any>(null);
   const [newParameter, setNewParameter] = useState({
+    type: '',
     name: '',
-    parameter_type: 'text',
-    is_required: false,
-    default_value: '',
-    language: 'TR'
+    value: '',
+    showInPdf: true
   });
-  const [showAddForm, setShowAddForm] = useState(false);
 
+  // Mevcut parametreleri çek
   const { data: parameters, isLoading } = useQuery({
     queryKey: ['quotation-parameters'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('company_settings')
         .select('*')
-        .eq('setting_type', 'quotation_parameter')
-        .order('created_at', { ascending: false });
+        .in('setting_type', [
+          'countries', 'currencies', 'company_types', 'brands', 
+          'quotation_statuses', 'delivery_methods', 'payment_methods',
+          'bank_info', 'company_info'
+        ])
+        .order('setting_type');
       
       if (error) throw error;
-      
-      // Cast the data to QuotationParameter type with proper value structure
-      return data.map(item => ({
-        ...item,
-        value: item.value as {
-          parameter_type: string;
-          is_required: boolean;
-          default_value: string;
-        }
-      })) as QuotationParameter[];
+      return data;
     },
-    enabled: !!user,
   });
 
-  const createMutation = useMutation({
-    mutationFn: async (parameterData: typeof newParameter) => {
+  // Yeni parametre ekle
+  const addParameterMutation = useMutation({
+    mutationFn: async (parameter: any) => {
       const { error } = await supabase
         .from('company_settings')
         .insert({
-          setting_type: 'quotation_parameter',
-          name: parameterData.name,
-          value: {
-            parameter_type: parameterData.parameter_type,
-            is_required: parameterData.is_required,
-            default_value: parameterData.default_value
-          },
-          language: parameterData.language as any,
-          created_by: user?.id
+          setting_type: parameter.type,
+          name: parameter.name,
+          value: { 
+            name: parameter.value, 
+            showInPdf: parameter.showInPdf 
+          }
         });
       
       if (error) throw error;
@@ -82,49 +59,15 @@ const QuotationParametersSettings = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['quotation-parameters'] });
       toast.success('Parametre başarıyla eklendi');
-      setNewParameter({
-        name: '',
-        parameter_type: 'text',
-        is_required: false,
-        default_value: '',
-        language: 'TR'
-      });
-      setShowAddForm(false);
+      setNewParameter({ type: '', name: '', value: '', showInPdf: true });
     },
     onError: (error) => {
       toast.error('Parametre eklenirken hata oluştu: ' + error.message);
     },
   });
 
-  const updateMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: any }) => {
-      const { error } = await supabase
-        .from('company_settings')
-        .update({
-          name: data.name,
-          value: {
-            parameter_type: data.parameter_type,
-            is_required: data.is_required,
-            default_value: data.default_value
-          },
-          language: data.language as any
-        })
-        .eq('id', id);
-      
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['quotation-parameters'] });
-      toast.success('Parametre başarıyla güncellendi');
-      setEditingId(null);
-      setEditingData(null);
-    },
-    onError: (error) => {
-      toast.error('Parametre güncellenirken hata oluştu: ' + error.message);
-    },
-  });
-
-  const deleteMutation = useMutation({
+  // Parametre sil
+  const deleteParameterMutation = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase
         .from('company_settings')
@@ -142,349 +85,174 @@ const QuotationParametersSettings = () => {
     },
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // PDF'de gösterim durumunu güncelle
+  const updatePdfVisibilityMutation = useMutation({
+    mutationFn: async ({ id, showInPdf }: { id: string; showInPdf: boolean }) => {
+      const parameter = parameters?.find(p => p.id === id);
+      if (!parameter) return;
+
+      const updatedValue = {
+        ...parameter.value,
+        showInPdf
+      };
+
+      const { error } = await supabase
+        .from('company_settings')
+        .update({ value: updatedValue })
+        .eq('id', id);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['quotation-parameters'] });
+      toast.success('PDF görünürlük ayarı güncellendi');
+    },
+    onError: (error) => {
+      toast.error('Güncelleme hatası: ' + error.message);
+    },
+  });
+
+  const parameterTypes = [
+    { value: 'countries', label: 'Ülkeler' },
+    { value: 'currencies', label: 'Para Birimleri' },
+    { value: 'company_types', label: 'Firma Tipleri' },
+    { value: 'brands', label: 'Markalar' },
+    { value: 'quotation_statuses', label: 'Teklif Durumları' },
+    { value: 'delivery_methods', label: 'Teslim Şartları' },
+    { value: 'payment_methods', label: 'Ödeme Şekilleri' },
+    { value: 'bank_info', label: 'Banka Bilgileri' },
+    { value: 'company_info', label: 'Firma Bilgileri' }
+  ];
+
+  const handleAddParameter = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newParameter.name.trim()) {
-      toast.error('Parametre adı zorunludur');
+    if (!newParameter.type || !newParameter.name || !newParameter.value) {
+      toast.error('Lütfen tüm alanları doldurun');
       return;
     }
-    createMutation.mutate(newParameter);
+    addParameterMutation.mutate(newParameter);
   };
 
-  const handleUpdate = (id: string, data: any) => {
-    updateMutation.mutate({ id, data });
-  };
-
-  const startEdit = (parameter: QuotationParameter) => {
-    setEditingId(parameter.id);
-    setEditingData({
-      name: parameter.name,
-      parameter_type: parameter.value.parameter_type,
-      is_required: parameter.value.is_required,
-      default_value: parameter.value.default_value,
-      language: parameter.language
-    });
-  };
-
-  const saveEdit = () => {
-    if (editingId && editingData) {
-      handleUpdate(editingId, editingData);
+  const groupedParameters = parameters?.reduce((acc, param) => {
+    if (!acc[param.setting_type]) {
+      acc[param.setting_type] = [];
     }
-  };
-
-  const cancelEdit = () => {
-    setEditingId(null);
-    setEditingData(null);
-  };
-
-  const getParameterTypeText = (type: string) => {
-    switch (type) {
-      case 'text': return 'Metin';
-      case 'number': return 'Sayı';
-      case 'select': return 'Seçim';
-      case 'boolean': return 'Evet/Hayır';
-      default: return type;
-    }
-  };
-
-  const getLanguageText = (language: string) => {
-    switch (language) {
-      case 'TR': return 'Türkçe';
-      case 'EN': return 'İngilizce';
-      case 'PL': return 'Lehçe';
-      case 'FR': return 'Fransızca';
-      case 'RU': return 'Rusça';
-      case 'DE': return 'Almanca';
-      case 'AR': return 'Arapça';
-      default: return language;
-    }
-  };
+    acc[param.setting_type].push(param);
+    return acc;
+  }, {} as Record<string, any[]>) || {};
 
   if (isLoading) {
-    return (
-      <div className="space-y-4">
-        <div className="animate-pulse space-y-4">
-          {[...Array(3)].map((_, i) => (
-            <div key={i} className="h-20 bg-gray-200 rounded"></div>
-          ))}
-        </div>
-      </div>
-    );
+    return <div>Yükleniyor...</div>;
   }
 
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <Settings className="h-5 w-5" />
-              Teklif Parametreleri
-            </CardTitle>
-            <Button
-              onClick={() => setShowAddForm(true)}
-              className="flex items-center gap-2"
-            >
-              <Plus className="h-4 w-4" />
-              Yeni Parametre
-            </Button>
-          </div>
+          <CardTitle>Teklif Parametreleri</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="text-sm text-gray-600 mb-4">
-            Tekliflerde kullanılacak parametreleri buradan yönetebilirsiniz. 
-            Bu parametreler matris sisteminde kullanılacaktır.
-          </div>
+        <CardContent className="space-y-6">
+          {/* Yeni Parametre Ekleme Formu */}
+          <form onSubmit={handleAddParameter} className="space-y-4 p-4 border rounded-lg">
+            <h3 className="text-lg font-medium">Yeni Parametre Ekle</h3>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div>
+                <Label htmlFor="parameter-type">Parametre Tipi</Label>
+                <Select 
+                  value={newParameter.type} 
+                  onValueChange={(value) => setNewParameter(prev => ({...prev, type: value}))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Tip seçin" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {parameterTypes.map(type => (
+                      <SelectItem key={type.value} value={type.value}>
+                        {type.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="parameter-name">Parametre Adı</Label>
+                <Input
+                  id="parameter-name"
+                  value={newParameter.name}
+                  onChange={(e) => setNewParameter(prev => ({...prev, name: e.target.value}))}
+                  placeholder="Parametre adı"
+                />
+              </div>
+              <div>
+                <Label htmlFor="parameter-value">Değer</Label>
+                <Input
+                  id="parameter-value"
+                  value={newParameter.value}
+                  onChange={(e) => setNewParameter(prev => ({...prev, value: e.target.value}))}
+                  placeholder="Değer"
+                />
+              </div>
+              <div className="flex items-center space-x-2">
+                <Switch
+                  checked={newParameter.showInPdf}
+                  onCheckedChange={(checked) => setNewParameter(prev => ({...prev, showInPdf: checked}))}
+                />
+                <Label>PDF'de Göster</Label>
+              </div>
+            </div>
+            <Button type="submit" disabled={addParameterMutation.isPending}>
+              <Plus className="h-4 w-4 mr-2" />
+              Parametre Ekle
+            </Button>
+          </form>
 
-          {showAddForm && (
-            <Card className="mb-6 border-blue-200">
-              <CardHeader>
-                <CardTitle className="text-lg">Yeni Parametre Ekle</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="name">Parametre Adı *</Label>
-                      <Input
-                        id="name"
-                        value={newParameter.name}
-                        onChange={(e) => setNewParameter(prev => ({ ...prev, name: e.target.value }))}
-                        placeholder="Örn: Vinç Kapasitesi"
-                        required
-                      />
-                    </div>
+          <Separator />
 
-                    <div>
-                      <Label htmlFor="parameter_type">Parametre Tipi</Label>
-                      <Select
-                        value={newParameter.parameter_type}
-                        onValueChange={(value) => setNewParameter(prev => ({ ...prev, parameter_type: value }))}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="text">Metin</SelectItem>
-                          <SelectItem value="number">Sayı</SelectItem>
-                          <SelectItem value="select">Seçim</SelectItem>
-                          <SelectItem value="boolean">Evet/Hayır</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div>
-                      <Label htmlFor="default_value">Varsayılan Değer</Label>
-                      <Input
-                        id="default_value"
-                        value={newParameter.default_value}
-                        onChange={(e) => setNewParameter(prev => ({ ...prev, default_value: e.target.value }))}
-                        placeholder="Varsayılan değer"
-                      />
-                    </div>
-
-                    <div>
-                      <Label htmlFor="language">Dil</Label>
-                      <Select
-                        value={newParameter.language}
-                        onValueChange={(value) => setNewParameter(prev => ({ ...prev, language: value }))}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="TR">Türkçe</SelectItem>
-                          <SelectItem value="EN">İngilizce</SelectItem>
-                          <SelectItem value="PL">Lehçe</SelectItem>
-                          <SelectItem value="FR">Fransızca</SelectItem>
-                          <SelectItem value="RU">Rusça</SelectItem>
-                          <SelectItem value="DE">Almanca</SelectItem>
-                          <SelectItem value="AR">Arapça</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      id="is_required"
-                      checked={newParameter.is_required}
-                      onChange={(e) => setNewParameter(prev => ({ ...prev, is_required: e.target.checked }))}
-                      className="rounded"
-                    />
-                    <Label htmlFor="is_required">Zorunlu parametre</Label>
-                  </div>
-
-                  <div className="flex gap-2">
-                    <Button
-                      type="submit"
-                      disabled={createMutation.isPending}
-                      className="flex items-center gap-2"
-                    >
-                      <Save className="h-4 w-4" />
-                      {createMutation.isPending ? 'Kaydediliyor...' : 'Kaydet'}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => setShowAddForm(false)}
-                    >
-                      <X className="h-4 w-4" />
-                      İptal
-                    </Button>
-                  </div>
-                </form>
-              </CardContent>
-            </Card>
-          )}
-
+          {/* Mevcut Parametreler */}
           <div className="space-y-4">
-            {parameters && parameters.length > 0 ? (
-              parameters.map((parameter) => (
-                <Card key={parameter.id} className="border-l-4 border-l-blue-500">
-                  <CardContent className="pt-4">
-                    {editingId === parameter.id ? (
-                      <div className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-                            <Label>Parametre Adı</Label>
-                            <Input
-                              value={editingData?.name || ''}
-                              onChange={(e) => setEditingData(prev => ({ ...prev, name: e.target.value }))}
+            <h3 className="text-lg font-medium">Mevcut Parametreler</h3>
+            {Object.entries(groupedParameters).map(([type, params]) => (
+              <Card key={type}>
+                <CardHeader>
+                  <CardTitle className="text-base">
+                    {parameterTypes.find(t => t.value === type)?.label || type}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {params.map((param) => (
+                      <div key={param.id} className="flex items-center justify-between p-2 border rounded">
+                        <div className="flex items-center space-x-4">
+                          <span className="font-medium">{param.name}</span>
+                          <span className="text-gray-600">
+                            {typeof param.value === 'object' ? param.value.name : param.value}
+                          </span>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <div className="flex items-center space-x-2">
+                            <Switch
+                              checked={param.value?.showInPdf ?? true}
+                              onCheckedChange={(checked) => 
+                                updatePdfVisibilityMutation.mutate({ id: param.id, showInPdf: checked })
+                              }
                             />
+                            <Label className="text-sm">PDF'de Göster</Label>
                           </div>
-                          <div>
-                            <Label>Parametre Tipi</Label>
-                            <Select
-                              value={editingData?.parameter_type || 'text'}
-                              onValueChange={(value) => setEditingData(prev => ({ ...prev, parameter_type: value }))}
-                            >
-                              <SelectTrigger>
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="text">Metin</SelectItem>
-                                <SelectItem value="number">Sayı</SelectItem>
-                                <SelectItem value="select">Seçim</SelectItem>
-                                <SelectItem value="boolean">Evet/Hayır</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <div>
-                            <Label>Varsayılan Değer</Label>
-                            <Input
-                              value={editingData?.default_value || ''}
-                              onChange={(e) => setEditingData(prev => ({ ...prev, default_value: e.target.value }))}
-                            />
-                          </div>
-                          <div>
-                            <Label>Dil</Label>
-                            <Select
-                              value={editingData?.language || 'TR'}
-                              onValueChange={(value) => setEditingData(prev => ({ ...prev, language: value }))}
-                            >
-                              <SelectTrigger>
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="TR">Türkçe</SelectItem>
-                                <SelectItem value="EN">İngilizce</SelectItem>
-                                <SelectItem value="PL">Lehçe</SelectItem>
-                                <SelectItem value="FR">Fransızca</SelectItem>
-                                <SelectItem value="RU">Rusça</SelectItem>
-                                <SelectItem value="DE">Almanca</SelectItem>
-                                <SelectItem value="AR">Arapça</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="checkbox"
-                            checked={editingData?.is_required || false}
-                            onChange={(e) => setEditingData(prev => ({ ...prev, is_required: e.target.checked }))}
-                            className="rounded"
-                          />
-                          <Label>Zorunlu parametre</Label>
-                        </div>
-                        <div className="flex gap-2">
-                          <Button
-                            onClick={saveEdit}
-                            disabled={updateMutation.isPending}
-                            className="flex items-center gap-2"
-                          >
-                            <Save className="h-4 w-4" />
-                            {updateMutation.isPending ? 'Kaydediliyor...' : 'Kaydet'}
-                          </Button>
-                          <Button
-                            variant="outline"
-                            onClick={cancelEdit}
-                          >
-                            <X className="h-4 w-4" />
-                            İptal
-                          </Button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-2">
-                            <h3 className="font-medium text-lg">{parameter.name}</h3>
-                            <Badge variant="outline">
-                              {getParameterTypeText(parameter.value.parameter_type)}
-                            </Badge>
-                            <Badge variant="secondary">
-                              {getLanguageText(parameter.language)}
-                            </Badge>
-                            {parameter.value.is_required && (
-                              <Badge variant="destructive">Zorunlu</Badge>
-                            )}
-                          </div>
-                          
-                          {parameter.value.default_value && (
-                            <div className="text-sm text-gray-600">
-                              <span className="font-medium">Varsayılan: </span>
-                              {parameter.value.default_value}
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="flex gap-2">
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => startEdit(parameter)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => deleteMutation.mutate(parameter.id)}
-                            disabled={deleteMutation.isPending}
+                            onClick={() => deleteParameterMutation.mutate(param.id)}
+                            disabled={deleteParameterMutation.isPending}
                           >
                             <Trash2 className="h-4 w-4 text-red-500" />
                           </Button>
                         </div>
                       </div>
-                    )}
-                  </CardContent>
-                </Card>
-              ))
-            ) : (
-              <div className="text-center py-8">
-                <Settings className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Henüz parametre eklenmemiş</h3>
-                <p className="text-gray-600 mb-4">
-                  Tekliflerinizde kullanmak için parametreler ekleyin
-                </p>
-                <Button onClick={() => setShowAddForm(true)}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  İlk parametreyi ekle
-                </Button>
-              </div>
-            )}
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         </CardContent>
       </Card>

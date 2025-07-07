@@ -27,9 +27,6 @@ export const generateQuotationPdf = async (data: QuotationPdfData) => {
   
   const doc = new jsPDF();
   
-  // Türkçe karakter desteği için encoding ayarlama
-  doc.setLanguage('tr');
-  
   const defaultSettings = {
     showProductProperties: true,
     headerColor: '#428bca',
@@ -39,14 +36,17 @@ export const generateQuotationPdf = async (data: QuotationPdfData) => {
     ...settings
   };
 
+  // Tek font kullanımı - Helvetica
+  const fontFamily = 'helvetica';
+
   // Header
   doc.setFontSize(20);
-  doc.setFont('helvetica', 'bold');
+  doc.setFont(fontFamily, 'bold');
   doc.text('FİYAT TEKLİFİ', 105, 20, { align: 'center' });
   
   // Quotation Info Section
   doc.setFontSize(defaultSettings.fontSize);
-  doc.setFont('helvetica', 'normal');
+  doc.setFont(fontFamily, 'normal');
   doc.text(`Teklif No: ${quotation.quotation_number}`, 20, 40);
   doc.text(`Tarih: ${new Date(quotation.quotation_date).toLocaleDateString('tr-TR')}`, 20, 50);
   doc.text(`Geçerlilik: ${quotation.valid_until ? new Date(quotation.valid_until).toLocaleDateString('tr-TR') : '-'}`, 20, 60);
@@ -82,13 +82,14 @@ export const generateQuotationPdf = async (data: QuotationPdfData) => {
     styles: {
       fontSize: 10,
       cellPadding: 4,
-      font: 'helvetica',
+      font: fontFamily,
     },
     headStyles: {
       fillColor: hexToRgb(defaultSettings.headerColor),
       textColor: 255,
       fontSize: 11,
       fontStyle: 'bold',
+      font: fontFamily,
     },
     columnStyles: {
       0: { cellWidth: 35 },
@@ -117,7 +118,7 @@ export const generateQuotationPdf = async (data: QuotationPdfData) => {
         if (properties.length > 0) {
           // Ürün başlığı
           propertiesData.push([
-            { content: item.products.name, colSpan: 2, styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } }
+            { content: item.products.name, colSpan: 2, styles: { fontStyle: 'bold', fillColor: [240, 240, 240], font: fontFamily } }
           ]);
           
           // Ürün özellikleri
@@ -136,7 +137,7 @@ export const generateQuotationPdf = async (data: QuotationPdfData) => {
     
     if (propertiesData.length > 0) {
       doc.setFontSize(14);
-      doc.setFont('helvetica', 'bold');
+      doc.setFont(fontFamily, 'bold');
       doc.text('ÜRÜN ÖZELLİKLERİ', 20, currentY);
       currentY += 10;
       
@@ -147,13 +148,14 @@ export const generateQuotationPdf = async (data: QuotationPdfData) => {
         styles: {
           fontSize: 9,
           cellPadding: 3,
-          font: 'helvetica',
+          font: fontFamily,
         },
         headStyles: {
           fillColor: hexToRgb(defaultSettings.headerColor),
           textColor: 255,
           fontSize: 10,
           fontStyle: 'bold',
+          font: fontFamily,
         },
         columnStyles: {
           0: { cellWidth: 60, fontStyle: 'bold' },
@@ -168,18 +170,18 @@ export const generateQuotationPdf = async (data: QuotationPdfData) => {
   
   // Total
   doc.setFontSize(16);
-  doc.setFont('helvetica', 'bold');
+  doc.setFont(fontFamily, 'bold');
   doc.text(`TOPLAM: ${formatPrice(quotation.total_amount, quotation.currency)}`, 190, currentY, { align: 'right' });
   
   // Notes
   if (quotation.notes) {
     currentY += 15;
     doc.setFontSize(12);
-    doc.setFont('helvetica', 'bold');
+    doc.setFont(fontFamily, 'bold');
     doc.text('Notlar:', 20, currentY);
     currentY += 8;
     
-    doc.setFont('helvetica', 'normal');
+    doc.setFont(fontFamily, 'normal');
     const splitNotes = doc.splitTextToSize(quotation.notes, 170);
     doc.text(splitNotes, 20, currentY);
   }
@@ -187,7 +189,7 @@ export const generateQuotationPdf = async (data: QuotationPdfData) => {
   // Footer
   const pageHeight = doc.internal.pageSize.height;
   doc.setFontSize(8);
-  doc.setFont('helvetica', 'normal');
+  doc.setFont(fontFamily, 'normal');
   doc.text(defaultSettings.customFooterText, 105, pageHeight - 20, { align: 'center' });
   
   // Save PDF

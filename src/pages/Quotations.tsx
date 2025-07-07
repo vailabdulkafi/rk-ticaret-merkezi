@@ -143,8 +143,10 @@ const Quotations = () => {
 
   const handlePdfDownload = async (quotation: any) => {
     try {
+      console.log('PDF indirme başladı:', quotation.id);
+      
       // Teklif ürünlerini ve firma bilgilerini çek
-      const { data: items } = await supabase
+      const { data: items, error: itemsError } = await supabase
         .from('quotation_items')
         .select(`
           *,
@@ -164,11 +166,23 @@ const Quotations = () => {
         .eq('quotation_id', quotation.id)
         .order('created_at', { ascending: true });
 
-      const { data: company } = await supabase
+      if (itemsError) {
+        console.error('Ürünler çekilirken hata:', itemsError);
+        throw itemsError;
+      }
+
+      const { data: company, error: companyError } = await supabase
         .from('companies')
         .select('*')
         .eq('id', quotation.company_id)
         .single();
+
+      if (companyError) {
+        console.error('Firma bilgileri çekilirken hata:', companyError);
+        throw companyError;
+      }
+
+      console.log('Veriler hazır, PDF oluşturuluyor...');
 
       // PDF ayarları - burası özelleştirilebilir
       const pdfSettings = {
@@ -186,10 +200,11 @@ const Quotations = () => {
         settings: pdfSettings
       });
 
+      console.log('PDF başarıyla oluşturuldu');
       toast.success('PDF başarıyla oluşturuldu');
     } catch (error) {
       console.error('PDF oluşturma hatası:', error);
-      toast.error('PDF oluşturulurken hata oluştu');
+      toast.error('PDF oluşturulurken hata oluştu: ' + (error as Error).message);
     }
   };
 
