@@ -155,11 +155,14 @@ const Quotations = () => {
             product_properties (
               property_name,
               property_value,
-              show_in_quotation
+              show_in_quotation,
+              display_order,
+              language
             )
           )
         `)
-        .eq('quotation_id', quotation.id);
+        .eq('quotation_id', quotation.id)
+        .order('created_at', { ascending: true });
 
       const { data: company } = await supabase
         .from('companies')
@@ -167,10 +170,20 @@ const Quotations = () => {
         .eq('id', quotation.company_id)
         .single();
 
+      // PDF ayarları - burası özelleştirilebilir
+      const pdfSettings = {
+        showProductProperties: true,
+        headerColor: '#428bca',
+        fontSize: 12,
+        showCompanyLogo: false,
+        customFooterText: 'Bu teklif elektronik ortamda oluşturulmuştur. Resmi onay için yetkili imzası gereklidir.'
+      };
+
       await generateQuotationPdf({
         quotation,
         items: items || [],
-        company
+        company,
+        settings: pdfSettings
       });
 
       toast.success('PDF başarıyla oluşturuldu');
