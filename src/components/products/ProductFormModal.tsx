@@ -273,8 +273,8 @@ const ProductFormModal = ({ open, onOpenChange, product }: ProductFormModalProps
                 </SelectTrigger>
                 <SelectContent>
                   {brands?.map((brand) => (
-                    <SelectItem key={brand.id} value={typeof brand.value === 'object' ? brand.value?.name || '' : brand.value}>
-                      {typeof brand.value === 'object' ? brand.value?.name : brand.value}
+                    <SelectItem key={brand.id} value={typeof brand.value === 'object' && brand.value && !Array.isArray(brand.value) && 'name' in brand.value ? (brand.value as any).name || '' : String(brand.value)}>
+                      {typeof brand.value === 'object' && brand.value && !Array.isArray(brand.value) && 'name' in brand.value ? (brand.value as any).name : String(brand.value)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -324,8 +324,8 @@ const ProductFormModal = ({ open, onOpenChange, product }: ProductFormModalProps
                 </SelectTrigger>
                 <SelectContent>
                   {currencies?.map((currency) => (
-                    <SelectItem key={currency.id} value={typeof currency.value === 'object' ? currency.value?.name || '' : currency.value}>
-                      {typeof currency.value === 'object' ? currency.value?.name : currency.value}
+                    <SelectItem key={currency.id} value={typeof currency.value === 'object' && currency.value && !Array.isArray(currency.value) && 'name' in currency.value ? (currency.value as any).name || '' : String(currency.value)}>
+                      {typeof currency.value === 'object' && currency.value && !Array.isArray(currency.value) && 'name' in currency.value ? (currency.value as any).name : String(currency.value)}
                     </SelectItem>
                   ))}
                 </SelectContent>
