@@ -1,5 +1,6 @@
 
 import { useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,6 +13,7 @@ import { Navigate } from 'react-router-dom';
 const Auth = () => {
   const { signIn, signUp, user, loading } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
 
   // Eğer kullanıcı zaten giriş yapmışsa ana sayfaya yönlendir
   if (user && !loading) {
@@ -76,6 +78,36 @@ const Auth = () => {
     setIsLoading(false);
   };
 
+  const handleForgotPassword = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsLoading(true);
+    
+    const formData = new FormData(e.currentTarget);
+    const email = formData.get('email') as string;
+
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth`,
+      });
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Başarılı",
+        description: "Şifre sıfırlama bağlantısı e-posta adresinize gönderildi.",
+      });
+      setShowForgotPassword(false);
+    } catch (error: any) {
+      toast({
+        title: "Hata",
+        description: error.message || "Bir hata oluştu",
+        variant: "destructive",
+      });
+    }
+    
+    setIsLoading(false);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -127,6 +159,15 @@ const Auth = () => {
                 >
                   {isLoading ? "Giriş yapılıyor..." : "Giriş Yap"}
                 </Button>
+                <div className="text-center mt-4">
+                  <button
+                    type="button"
+                    onClick={() => setShowForgotPassword(true)}
+                    className="text-sm text-blue-600 hover:underline"
+                  >
+                    Şifremi Unuttum
+                  </button>
+                </div>
               </form>
             </TabsContent>
             
@@ -183,6 +224,49 @@ const Auth = () => {
               </form>
             </TabsContent>
           </Tabs>
+
+          {/* Forgot Password Modal */}
+          {showForgotPassword && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+              <Card className="w-full max-w-md">
+                <CardHeader>
+                  <CardTitle>Şifre Sıfırlama</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <form onSubmit={handleForgotPassword} className="space-y-4">
+                    <div>
+                      <Label htmlFor="reset-email">E-posta</Label>
+                      <Input
+                        id="reset-email"
+                        name="email"
+                        type="email"
+                        required
+                        placeholder="ornek@email.com"
+                        defaultValue="vailabdulkafi@gmail.com"
+                      />
+                    </div>
+                    <div className="flex gap-2">
+                      <Button 
+                        type="submit" 
+                        className="flex-1" 
+                        disabled={isLoading}
+                      >
+                        {isLoading ? "Gönderiliyor..." : "Gönder"}
+                      </Button>
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        onClick={() => setShowForgotPassword(false)}
+                        disabled={isLoading}
+                      >
+                        İptal
+                      </Button>
+                    </div>
+                  </form>
+                </CardContent>
+              </Card>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
