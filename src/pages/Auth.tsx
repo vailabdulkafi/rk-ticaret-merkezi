@@ -84,18 +84,53 @@ const Auth = () => {
     
     const formData = new FormData(e.currentTarget);
     const email = formData.get('email') as string;
+    const resetType = formData.get('resetType') as string;
 
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth`,
-      });
+      if (resetType === 'link') {
+        // Use Supabase's built-in password reset
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: `${window.location.origin}/auth`,
+        });
+        
+        if (error) throw error;
+        
+        toast({
+          title: "Başarılı",
+          description: "Şifre sıfırlama bağlantısı e-posta adresinize gönderildi.",
+        });
+      } else {
+        // Generate temporary password and send via custom email
+        const tempPassword = Math.random().toString(36).slice(-12) + Math.random().toString(36).slice(-12).toUpperCase() + '!';
+        
+        // First update the user's password in Supabase
+        const { error: updateError } = await supabase.auth.admin.updateUserById(
+          'user-id-here', // We'll need to get this from the email lookup
+          { password: tempPassword }
+        );
+        
+        if (updateError) {
+          // If admin update fails, use the edge function approach
+          const response = await fetch('/functions/v1/send-password-reset', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              email,
+              temporaryPassword: tempPassword,
+            }),
+          });
+          
+          if (!response.ok) throw new Error('Email gönderilirken hata oluştu');
+        }
+        
+        toast({
+          title: "Başarılı",
+          description: "Yeni geçici şifreniz e-posta adresinize gönderildi.",
+        });
+      }
       
-      if (error) throw error;
-      
-      toast({
-        title: "Başarılı",
-        description: "Şifre sıfırlama bağlantısı e-posta adresinize gönderildi.",
-      });
       setShowForgotPassword(false);
     } catch (error: any) {
       toast({
@@ -245,6 +280,32 @@ const Auth = () => {
                         defaultValue="vailabdulkafi@gmail.com"
                       />
                     </div>
+                    
+                    <div>
+                      <Label>Şifre Sıfırlama Yöntemi</Label>
+                      <div className="space-y-2 mt-2">
+                        <label className="flex items-center space-x-2">
+                          <input
+                            type="radio"
+                            name="resetType"
+                            value="link"
+                            defaultChecked
+                            className="form-radio"
+                          />
+                          <span className="text-sm">Sıfırlama bağlantısı gönder</span>
+                        </label>
+                        <label className="flex items-center space-x-2">
+                          <input
+                            type="radio"
+                            name="resetType"
+                            value="password"
+                            className="form-radio"
+                          />
+                          <span className="text-sm">Yeni geçici şifre gönder</span>
+                        </label>
+                      </div>
+                    </div>
+
                     <div className="flex gap-2">
                       <Button 
                         type="submit" 
